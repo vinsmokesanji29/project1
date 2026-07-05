@@ -1,0 +1,33 @@
+{
+  "domain_id": "hct",
+  "display_name": "Healthcare Claims & Trends",
+  "type": "standalone",
+  "one_liner": "Identifies key trends in healthcare claims data (spend, utilization, unit cost) and the drivers behind them, across BETOS/CPT hierarchies.",
+  "summary": "Healthcare Trends (HCT) helps identify key trends in a large healthcare claims dataset and understand the drivers responsible for those trends. Analysis flows from BETOS Category/Subcategory down through BETOS Family to CPT code, using Specialty (SPEC), Place of Service (POS), and Diagnosis (ICD) as supporting dimensions. It powers Payment Policy Insight articles, ad-hoc trend analysis, and Cotiviti Client Conference content, typically framed as year-over-year (YoY) spend-share, utilization, and unit-cost movement.",
+  "use_when": [
+    "User asks about healthcare spend/utilization/unit-cost TRENDS over time (YoY, rolling 12 months)",
+    "User asks which BETOS categories, subcategories, families, or CPT codes drive a change",
+    "User asks about drivers by specialty, place of service, or diagnosis (ICD) group",
+    "User asks about behavioral health, telehealth, or medical-drug claim trends",
+    "User asks which medical policies drive savings or how edit rates are changing",
+    "User asks a payment-policy or claims-trend analytical question"
+  ],
+  "do_not_use_when": [
+    "User asks about sales opportunities, whitespace, or ACV -> use WSI",
+    "User asks about membership/enrollment market size -> use AIS",
+    "User asks to benchmark a client against peers -> use Peer",
+    "User asks about Cotiviti's geographic presence -> use Footprint",
+    "User asks about single-customer payment-variance/footprint claims outcomes -> use Unidata"
+  ],
+  "primary_entities": ["BETOS category/subcategory/family", "CPT code", "specialty (SPEC)", "place of service (POS)", "diagnosis (ICD) group", "line of business", "product type", "medical policy", "period (quarter/period label)"],
+  "key_metrics": ["Paid", "NPV", "GPV", "Claim Count", "Member Count", "Non-Bypassed Lines", "Edited Lines", "NPV %", "APV %", "Edits per 1000 Lines", "Claims per 1000 Members", "Spend Share", "Utilization", "Unit Cost"],
+  "output_preference": ["Summary tables", "Visual charts / BI dashboard", "Narrative bullet points", "Downloadable files (Excel, PPT)"],
+  "sample_questions": [
+    "Which BETOS categories and subcategories show the largest YoY change in spend share, and how do utilization and unit-cost trends explain it?",
+    "Within the flagged BETOS subcategory, which line of business has the biggest YoY shift in spend share?",
+    "Which specialty groups are the top contributors to the category/subcategory trend?",
+    "Which places of service are most responsible for the observed movement in spend share?",
+    "Which diagnosis (ICD) groups are emerging as key drivers of the trend?",
+    "For the top drivers, which medical policies account for the highest share of savings, and how are edit rates changing YoY?"
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "filters": [
+    {
+      "filter_id": "current_period",
+      "description": "Most recent rolling 12 months only",
+      "nl_triggers": ["current", "latest", "most recent", "this year"],
+      "where_clause": "\"period_indicator\" = 'P'"
+    },
+    {
+      "filter_id": "prior_period",
+      "description": "Prior 12-month window",
+      "nl_triggers": ["prior year", "last year", "previous period"],
+      "where_clause": "\"period_indicator\" = 'P_lag1'"
+    },
+    {
+      "filter_id": "same_store_only",
+      "description": "Only continuously active payers (apples-to-apples trend comparison)",
+      "nl_triggers": ["same store", "consistent", "comparable", "apples to apples"],
+      "where_clause": "\"same_store\" = 1"
+    },
+    {
+      "filter_id": "behavioral_health",
+      "description": "Behavioral health claims only (financial queries)",
+      "nl_triggers": ["behavioral health", "BH", "mental health", "psychiatric"],
+      "where_clause": "\"behavioral_health_indicator\" = 1"
+    },
+    {
+      "filter_id": "telehealth",
+      "description": "Telehealth claims only (financial queries)",
+      "nl_triggers": ["telehealth", "virtual", "remote"],
+      "where_clause": "\"telehealth_indicator\" = 'Telehealth'"
+    },
+    {
+      "filter_id": "medical_drugs",
+      "description": "Medical drugs claims only (financial queries)",
+      "nl_triggers": ["medical drugs", "drugs", "biologics", "D&B"],
+      "where_clause": "\"medical_drugs_indicator\" = 1"
+    },
+    {
+      "filter_id": "enm_only",
+      "description": "E/M category claims only",
+      "nl_triggers": ["E/M", "evaluation and management", "ENM", "E&M"],
+      "where_clause": "\"betos_category\" = 'E/M'"
+    },
+    {
+      "filter_id": "blues_only",
+      "description": "BCBS-affiliated payers only",
+      "nl_triggers": ["blues", "BCBS", "blue cross"],
+      "where_clause": "\"blues_indicator\" = 'Y'"
+    },
+    {
+      "filter_id": "national_segment",
+      "description": "National customers only",
+      "nl_triggers": ["national", "large customers"],
+      "where_clause": "\"customer_segment\" = 'National'"
+    },
+    {
+      "filter_id": "regional_segment",
+      "description": "Regional customers only",
+      "nl_triggers": ["regional", "smaller customers"],
+      "where_clause": "\"customer_segment\" = 'Regional'"
+    },
+    {
+      "filter_id": "ppm_solution",
+      "description": "PPM edits only",
+      "nl_triggers": ["PPM", "payment policy"],
+      "where_clause": "\"solution\" = 'PPM'"
+    },
+    {
+      "filter_id": "cv_solution",
+      "description": "CV edits only",
+      "nl_triggers": ["CV", "coding validation"],
+      "where_clause": "\"solution\" = 'CV'"
+    },
+    {
+      "filter_id": "non_bypassed",
+      "description": "Only non-bypassed lines (already default for paid/gpv/npv columns, but explicit for total_received_lines breakdowns)",
+      "nl_triggers": ["non-bypassed", "processed", "not bypassed"],
+      "where_clause": "\"level_of_detail\" IS NULL"
+    },
+    {
+      "filter_id": "financial_rows",
+      "description": "Financial/sum-part rows only (excludes count-part rows)",
+      "nl_triggers": ["financial", "savings", "paid", "cost"],
+      "where_clause": "\"level_of_detail\" IS NULL"
+    }
+  ],
+  "mandatory_filters": []
+}

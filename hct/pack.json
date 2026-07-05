@@ -1,0 +1,37 @@
+{
+  "name": "Healthcare Claims & Trends",
+  "short_name": "HCT",
+  "description": "Healthcare claims analytics dataset covering payment integrity trends, clinical utilization, BETOS categorization, and operational KPIs across Cotiviti's client base. Supports financial trend analysis (paid, GPV, NPV), utilization metrics (claims per 1000 members), and clinical breakdowns (BH, telehealth, medical drugs, E/M). Data spans a rolling 3-year window with period-over-period comparison via period_indicator.",
+  "keywords": [
+    "healthcare",
+    "claims",
+    "trends",
+    "HCT",
+    "paid",
+    "NPV",
+    "GPV",
+    "behavioral health",
+    "telehealth",
+    "BETOS",
+    "utilization",
+    "claims per 1000",
+    "E/M",
+    "medical drugs",
+    "specialty",
+    "CPT",
+    "ICD",
+    "place of service",
+    "unit cost",
+    "edit rate",
+    "savings"
+  ],
+  "tables": [
+    "PROD_DATASETS.HEALTHCARE_PHASE2_PPI"
+  ],
+  "version": "1.0.0",
+  "id": "hct",
+  "backend": "adb",
+  "dialect": "Oracle SQL",
+  "status": "active",
+  "tags": []
+}

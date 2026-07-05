@@ -1,0 +1,147 @@
+{
+  "broader_questions": [
+    {
+      "id": "hct-b1",
+      "broader_question": "Give me an overall Behavioral Health YoY financial trends dashboard",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Total Behavioral Health paid trend by period", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health NPV% trend by period", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost (paid per line) trend by period", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health edit rate (edits per 1000) trend by period", "chart_hint": "bar"}
+      ],
+      "hints": "Overall BH trends at aggregate level. Use behavioral_health_indicator = 1 for financial metrics. Period_label is the time axis."
+    },
+    {
+      "id": "hct-b2",
+      "broader_question": "Show me Behavioral Health financial trends split by line of business",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Behavioral Health paid by line of business over time", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health NPV% by line of business", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost by line of business over time", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Share of Behavioral Health paid by line of business over time", "chart_hint": "bar"}
+      ],
+      "hints": "Same financial metrics as hct-b1 but split by line_of_business. Use behavioral_health_indicator = 1."
+    },
+    {
+      "id": "hct-b3",
+      "broader_question": "Show me Behavioral Health spend share trend by product type",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Share of Behavioral Health paid by product type over time", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Total Behavioral Health paid by product type", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost by product type over time", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health edit rate by product type", "chart_hint": "bar"}
+      ],
+      "hints": "Cut financial metrics by product_type (Outpatient, Professional). Use behavioral_health_indicator = 1."
+    },
+    {
+      "id": "hct-b4",
+      "broader_question": "Show me Behavioral Health utilization trends — overall and by line of business",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Behavioral Health claims per 1000 members trend over time at overall level", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health claims per 1000 members by line of business over time", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health claims per 1000 members comparison across lines of business", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health paid vs utilization by line of business", "chart_hint": "bar"}
+      ],
+      "hints": "Use behavioral_health_indicator_cm = '1'. Overall utilization uses level_of_detail = 'period'. LOB utilization uses level_of_detail = 'period_lob' for both claim and member counts."
+    },
+    {
+      "id": "hct-b5",
+      "broader_question": "What are the Behavioral Health drivers by BETOS subcategory — spend share, utilization and unit cost?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Share of Behavioral Health paid by top BETOS subcategory", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health claims per 1000 members by top BETOS subcategory", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost (paid per line) by top BETOS subcategory", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health spend share trend by top BETOS subcategories over time", "chart_hint": "bar"}
+      ],
+      "hints": "Driver analysis at BETOS subcategory grain. Show top 10 subcategories by paid for period_indicator = 'P'. Financial metrics use behavioral_health_indicator = 1. Utilization uses behavioral_health_indicator_cm = '1' with level_of_detail = 'period_lob_prod_betos'. Member denominator at level_of_detail = 'period'."
+    },
+    {
+      "id": "hct-b6",
+      "broader_question": "What are the Behavioral Health drivers by BETOS family — spend share, utilization and unit cost?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Share of Behavioral Health paid by top BETOS families", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health claims per 1000 members by top BETOS families", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost (paid per line) by top BETOS families", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health spend share trend by top BETOS families over time", "chart_hint": "line"}
+      ],
+      "hints": "Driver analysis at BETOS family grain. Show top 10 BETOS families by paid for period_indicator = 'P'. Same indicator rules as hct-b5."
+    },
+    {
+      "id": "hct-b7",
+      "broader_question": "What are the Behavioral Health drivers by place of service — spend share, utilization and unit cost?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Share of Behavioral Health paid by top places of service", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health claims per 1000 members by top places of service", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost (paid per line) by top places of service", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health spend share trend by top places of service over time", "chart_hint": "line"}
+      ],
+      "hints": "Driver analysis at POS grain. Show top 10 places of service by paid for period_indicator = 'P'. Utilization uses level_of_detail = 'period_lob_prod_pos'. Member denominator at level_of_detail = 'period'."
+    },
+    {
+      "id": "hct-b8",
+      "broader_question": "What are the Behavioral Health drivers by specialty — spend share, utilization and unit cost?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Share of Behavioral Health paid by top specialties", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health claims per 1000 members by top specialties", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost (paid per line) by top specialties", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health spend share trend by top specialties over time", "chart_hint": "line"}
+      ],
+      "hints": "Driver analysis at specialty grain. Show top 10 specialties by paid for period_indicator = 'P'. Utilization uses level_of_detail = 'period_lob_prod_spec'. Member denominator at level_of_detail = 'period'."
+    },
+    {
+      "id": "hct-b9",
+      "broader_question": "What are the Behavioral Health drivers by ICD diagnostic group — spend share, utilization and unit cost?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Share of Behavioral Health paid by top ICD diagnostic groups", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health claims per 1000 members by top ICD diagnostic groups", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost (paid per line) by top ICD diagnostic groups", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health spend share trend by top ICD diagnostic groups over time", "chart_hint": "line"}
+      ],
+      "hints": "Driver analysis at ICD group grain. Show top 10 ICD diagnostic groups by paid for period_indicator = 'P'. Use icd1_grp_desc as the dimension. Same indicator rules apply."
+    },
+    {
+      "id": "hct-b10",
+      "broader_question": "Show me the level of service (LOS) trend — are higher levels of service being billed more?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Percentage share of non-bypassed lines by level of service (LOS) over time as a stacked bar", "chart_hint": "stacked_bar"},
+        {"id": "sq2", "question": "Total non-bypassed lines by level of service over time", "chart_hint": "line"},
+        {"id": "sq3", "question": "Paid per line (unit cost) by level of service over time", "chart_hint": "line"}
+      ],
+      "hints": "Use los as the color/stacking dimension and period_label as the x-axis. Metric is SUM(non_bypassed_lines) per LOS / SUM(non_bypassed_lines) total. There are 5 LOS values. Use stacked_bar to show composition shift YoY. Apply any active filters (BH, LOB, etc.) as needed."
+    },
+    {
+      "id": "hct-b11",
+      "broader_question": "Show me Behavioral Health psychotherapy duration trends — are longer sessions being billed more?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Percentage share of non-bypassed lines by BH psychotherapy duration group (30 min, 45 min, 60 min) over time as a stacked bar", "chart_hint": "stacked_bar"},
+        {"id": "sq2", "question": "Total non-bypassed lines by BH psychotherapy duration group over time", "chart_hint": "line"},
+        {"id": "sq3", "question": "Paid per line (unit cost) by BH psychotherapy duration group over time", "chart_hint": "line"},
+        {"id": "sq4", "question": "Total Behavioral Health paid by psychotherapy duration group over time", "chart_hint": "line"}
+      ],
+      "hints": "BH does not have LOS mapping. Instead create duration groups from CPT codes: 30 min = cpt_code IN ('90832','90833'), 45 min = cpt_code IN ('90834','90836'), 60 min = cpt_code IN ('90837','90838'). Use CASE WHEN to build the duration_group dimension. Filter behavioral_health_indicator = 1. Stacked bar shows % share of non_bypassed_lines by duration group over period_label."
+    },
+    {
+      "id": "hct-b12",
+      "broader_question": "What are the Behavioral Health drivers by CPT code — spend share, utilization and unit cost?",
+      "domain_id": "hct",
+      "sub_questions": [
+        {"id": "sq1", "question": "Share of Behavioral Health paid by top CPT codes", "chart_hint": "bar"},
+        {"id": "sq2", "question": "Behavioral Health claims per 1000 members by top CPT codes", "chart_hint": "bar"},
+        {"id": "sq3", "question": "Behavioral Health unit cost (paid per line) by top CPT codes", "chart_hint": "bar"},
+        {"id": "sq4", "question": "Behavioral Health spend share trend by top CPT codes over time", "chart_hint": "line"}
+      ],
+      "hints": "Driver analysis at CPT code grain. Show top 10 CPT codes by paid for period_indicator = 'P'. Financial metrics use behavioral_health_indicator = 1. Utilization uses behavioral_health_indicator_cm = '1' with level_of_detail = 'period_lob_prod_cpt'. Member denominator at level_of_detail = 'period'."
+    }
+  ]
+}

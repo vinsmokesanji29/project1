@@ -1,0 +1,18 @@
+{
+  "domain_id": "hct",
+  "display_name": "Healthcare Claims & Trends",
+  "type": "standalone",
+  "vs": {
+    "unidata": "HCT is about TRENDS and DRIVERS in the healthcare claims universe (BETOS/CPT hierarchy, spend-share/utilization/unit-cost, YoY). Unidata is about a CUSTOMER's payment-variance/savings outcomes and geographic footprint drilldown. HCT = 'what is trending in healthcare spend and why'; Unidata = 'how did this payer's claims perform for Cotiviti'.",
+    "peer": "HCT analyzes claim TRENDS/drivers across the dataset. Peer BENCHMARKS a specific client vs a peer group. HCT is trend-analytics; Peer is comparison.",
+    "footprint": "HCT is trend analysis of claims. Footprint is Cotiviti's geographic presence/experience. Different intent.",
+    "wsi": "HCT is claims-trend analytics. WSI is sales opportunity/ACV. No overlap.",
+    "ais": "HCT is about CLAIMS TRENDS and SPEND DRIVERS (spend share, utilization CAGR, unit cost CAGR by BETOS/CPT/ICD/specialty). AIS is about ENROLLMENT/MEMBERSHIP market sizing (how many members a plan has by state/LOB). 'Drivers' in HCT = spend drivers (ICD groups, subcategories causing cost movement). 'Drivers' in AIS/NBP = ML feature columns (why a product is recommended). If 'driver' is about SPEND/COST/TRENDS → HCT.",
+    "nbp": "HCT 'drivers' = what is causing spend/utilization to change (ICD/BETOS/specialty analysis — spend drivers). NBP 'drivers' = ML feature columns (Driver_1/2/3, Negative_Driver_1/2/3) explaining why a product IS or IS NOT recommended for an account. 'What is driving spend/cost/utilization' → HCT. 'What drives this recommendation', 'why is this recommended', 'negative factors', 'barriers to adoption' → NBP."
+  },
+  "tie_breakers": [
+    "'trend', 'YoY', 'over time', 'spend share', 'BETOS', 'CPT', 'utilization', 'unit cost', 'driver' -> HCT.",
+    "Single-payer payment-variance / savings / footprint outcome without trend framing -> Unidata, not HCT.",
+    "Future: article-based drilldowns will attach here (article_drill) but do not exist yet."
+  ]
+}

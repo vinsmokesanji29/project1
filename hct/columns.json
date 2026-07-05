@@ -1,0 +1,491 @@
+{
+  "clusters": [
+    {
+      "cluster_id": "identifiers",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Customer and payer identification columns",
+      "nl_triggers": [
+        "customer",
+        "payer",
+        "client",
+        "who",
+        "which customer",
+        "blues",
+        "segment",
+        "IDN",
+        "integrated delivery network"
+      ],
+      "columns": {
+        "customer": {
+          "type": "VARCHAR2",
+          "description": "Parent company for the payer (e.g. Centene, Cigna, Humana, CVS Health)"
+        },
+        "payer_short": {
+          "type": "VARCHAR2",
+          "description": "5-character payer code (high cardinality, 368 distinct values)"
+        },
+        "customer_segment": {
+          "type": "VARCHAR2",
+          "description": "Whether customer operates regionally or nationally: National, Regional"
+        },
+        "blues_indicator": {
+          "type": "VARCHAR2",
+          "description": "Y = payer affiliated with BCBS network, N = not"
+        },
+        "idn_yn": {
+          "type": "VARCHAR2",
+          "description": "Y = payer is part of an Integrated Delivery Network, N = not. Present in all LODs as a mandatory field."
+        },
+        "region": {
+          "type": "VARCHAR2",
+          "description": "Geographic region based on final_state: MidWest, NorthEast, South, West, Unknown"
+        },
+        "final_state": {
+          "type": "VARCHAR2",
+          "description": "Canonical state code (ZZ = unmapped). Derived from crosswalk: discrete_state \u2192 payer_state, else NPI\u2192state, else ZZ"
+        },
+        "provider_id": {
+          "type": "VARCHAR2",
+          "description": "Provider identifier for the claim line"
+        }
+      }
+    },
+    {
+      "cluster_id": "time",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Time dimension columns \u2014 rolling 12-month periods and quarters",
+      "nl_triggers": [
+        "time",
+        "period",
+        "year",
+        "quarter",
+        "trend",
+        "over time",
+        "YoY",
+        "lag",
+        "when",
+        "CAGR"
+      ],
+      "columns": {
+        "period_indicator": {
+          "type": "VARCHAR2",
+          "description": "Rolling 12-month window: P = most recent 12mo, P_lag1 = prior 12mo, P_lag2 = 2 years ago"
+        },
+        "period_label": {
+          "type": "VARCHAR2",
+          "description": "Formatted period range string (e.g. \"Q2'24-Q1'25\"). Use as x-axis for trend charts."
+        },
+        "year": {
+          "type": "VARCHAR2",
+          "description": "Calendar year (e.g. 2023, 2024, 2025)"
+        },
+        "quarter": {
+          "type": "VARCHAR2",
+          "description": "Calendar quarter: Q1, Q2, Q3, Q4"
+        },
+        "quarter_end_month": {
+          "type": "VARCHAR2",
+          "description": "Last month of the quarter in YYYYMM format (e.g. 202503)"
+        },
+        "current_quarter": {
+          "type": "VARCHAR2",
+          "description": "Current quarter of data refresh (e.g. 2025Q1)"
+        },
+        "current_quarter_1yr_lag": {
+          "type": "VARCHAR2",
+          "description": "Current quarter minus 1 year (e.g. 2024Q1)"
+        },
+        "previous_quarter": {
+          "type": "VARCHAR2",
+          "description": "Quarter immediately before current (e.g. 2024Q4)"
+        },
+        "current_year": {
+          "type": "VARCHAR2",
+          "description": "Current year of data (e.g. 2025)"
+        },
+        "latest_full_year": {
+          "type": "VARCHAR2",
+          "description": "Latest year with complete data (usually current_year - 1)"
+        },
+        "minimum_year": {
+          "type": "VARCHAR2",
+          "description": "Earliest year in the dataset (start of 3-year window)"
+        },
+        "min_invoice_date": {
+          "type": "VARCHAR2",
+          "description": "First invoice date for the payer (used for same_store calculation)"
+        }
+      }
+    },
+    {
+      "cluster_id": "claims",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Claim classification columns \u2014 type, product, line of business, solution",
+      "nl_triggers": [
+        "claim type",
+        "product type",
+        "line of business",
+        "LOB",
+        "solution",
+        "PPM",
+        "CV",
+        "inpatient",
+        "outpatient",
+        "professional",
+        "medicare",
+        "medicaid",
+        "commercial"
+      ],
+      "columns": {
+        "claim_type": {
+          "type": "VARCHAR2",
+          "description": "Single-letter claim type: P/F/A=Professional, O/S=Outpatient, I=Inpatient"
+        },
+        "product_type": {
+          "type": "VARCHAR2",
+          "description": "Derived from claim_type: Professional, Outpatient, Inpatient"
+        },
+        "line_of_business": {
+          "type": "VARCHAR2",
+          "description": "Insurance type: Commercial, Dual, Medicaid, Medicare"
+        },
+        "t_insurance_key": {
+          "type": "NUMBER",
+          "description": "Insurance key: 1=Medicare, 2=Medicaid, 3=Dual, 7/8/9=Commercial"
+        },
+        "solution": {
+          "type": "VARCHAR2",
+          "description": "Rule engine: PPM (Payment Policy Management), CV (Coding Validation), CPR (Claim Pattern Review), FWA (Fraud Waste & Abuse, Aetna only)"
+        },
+        "status": {
+          "type": "VARCHAR2",
+          "description": "Payer status from crosswalk: Current, Retired, or '-'"
+        },
+        "capitated_flag": {
+          "type": "NUMBER",
+          "description": "1 = capitated line, 0 = non-capitated"
+        },
+        "same_store": {
+          "type": "NUMBER",
+          "description": "1 = payer continuously active \u226590% of 36-month window with min_invoice_date before window start"
+        }
+      }
+    },
+    {
+      "cluster_id": "clinical",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Clinical classification \u2014 BETOS, CPT, ICD, specialty, place of service",
+      "nl_triggers": [
+        "BETOS",
+        "category",
+        "subcategory",
+        "family",
+        "CPT",
+        "procedure",
+        "ICD",
+        "diagnosis",
+        "specialty",
+        "place of service",
+        "POS",
+        "E/M",
+        "surgery",
+        "imaging",
+        "treatment"
+      ],
+      "columns": {
+        "betos_category": {
+          "type": "VARCHAR2",
+          "description": "RBCS category: Anesthesia, DME, E/M, Imaging, Other, Surgeries, Test, Treatment"
+        },
+        "betos_subcategory": {
+          "type": "VARCHAR2",
+          "description": "RBCS subcategory (52 values): Behavioral Health Services, Chemotherapy, Office/Outpatient Services, etc."
+        },
+        "betos_family": {
+          "type": "VARCHAR2",
+          "description": "RBCS family (180 values): Arthroplasty - Hip, Blood Count, Office Visits, etc."
+        },
+        "betos_major_ind": {
+          "type": "VARCHAR2",
+          "description": "Whether procedure is in Major Category grouping"
+        },
+        "cpt_code": {
+          "type": "VARCHAR2",
+          "description": "5-digit procedure code (Level1 CPT or Level2 HCPCS), zero-padded"
+        },
+        "cpt_desc": {
+          "type": "VARCHAR2",
+          "description": "Short description of the CPT/HCPCS code"
+        },
+        "icd1_grp_cd": {
+          "type": "VARCHAR2",
+          "description": "ICD-10 diagnostic group code (primary diagnosis)"
+        },
+        "icd1_grp_desc": {
+          "type": "VARCHAR2",
+          "description": "ICD-10 diagnostic group description (249 values): Back Pain, Diabetes, Asthma, etc."
+        },
+        "pos_code": {
+          "type": "VARCHAR2",
+          "description": "Place of service code (e.g. 11=Office, 21=Inpatient Hospital, 23=ER)"
+        },
+        "pos_desc": {
+          "type": "VARCHAR2",
+          "description": "Place of service description: Office, Telehealth, Inpatient Hospital, Outpatient Hospital, ER, ASC, Home, Clinics, Independent Lab, All Others"
+        },
+        "spec_desc": {
+          "type": "VARCHAR2",
+          "description": "Provider specialty description (151 values): CARDIOLOGY, BEHAVIORAL HEALTH, etc."
+        },
+        "subspec_code": {
+          "type": "VARCHAR2",
+          "description": "Sub-specialty code of the provider"
+        },
+        "bill_type": {
+          "type": "VARCHAR2",
+          "description": "4-digit CMS Type of Bill Code. 2nd=facility type, 3rd=care type, 4th=sequence"
+        },
+        "rev_code": {
+          "type": "VARCHAR2",
+          "description": "Revenue code (facility claims)"
+        },
+        "sub_rev_code": {
+          "type": "VARCHAR2",
+          "description": "Sub-revenue code"
+        },
+        "los": {
+          "type": "VARCHAR2",
+          "description": "Level of service for E&M codes: 1-5 based on CPT code mapping, NULL for non-E&M"
+        },
+        "enm_category": {
+          "type": "VARCHAR2",
+          "description": "E&M whitepaper category: Office_Visits, ER_Visits_99281-99285, Inpatient_99221-99223, Observation, Eye_Visits, etc."
+        }
+      }
+    },
+    {
+      "cluster_id": "indicators",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Binary indicator flags for subsetting data (SUM PART only \u2014 financial queries)",
+      "nl_triggers": [
+        "behavioral health",
+        "BH",
+        "telehealth",
+        "medical drugs",
+        "D&B",
+        "drugs and biologics",
+        "E/M",
+        "ENM",
+        "surgery",
+        "sepsis"
+      ],
+      "columns": {
+        "behavioral_health_indicator": {
+          "type": "NUMBER",
+          "description": "1 = BH claim (BETOS subcategory='Behavioral Health Services' OR ICD starts with F OR BH specialty OR POS 52/53/57). Use for FINANCIAL queries."
+        },
+        "telehealth_indicator": {
+          "type": "VARCHAR2",
+          "description": "'Telehealth' or 'Miscellaneous'. Derived from modifiers G0/GQ/GT/95 or POS 02/10."
+        },
+        "medical_drugs_indicator": {
+          "type": "NUMBER",
+          "description": "1 = CPT code is in medical drugs list. Use for FINANCIAL queries."
+        },
+        "dnb_indicator": {
+          "type": "NUMBER",
+          "description": "1 = BETOS subcategory is Injections/Infusions, Drugs via DME, Chemotherapy, or Anesthesia"
+        },
+        "enm_indicator": {
+          "type": "NUMBER",
+          "description": "1 = BETOS category is E/M. WARNING: this column has known data issues \u2014 prefer filtering with \"betos_category\" = 'E/M' instead."
+        },
+        "surgeries_indicator": {
+          "type": "NUMBER",
+          "description": "1 = BETOS category is Procedure (surgery)"
+        },
+        "sepsis_indicator": {
+          "type": "NUMBER",
+          "description": "1 = ICD-10 code is sepsis (A40.x, A41.x, P36.x)"
+        },
+        "recode_10": {
+          "type": "VARCHAR2",
+          "description": "1 = E/M CPT code was recoded (cpt_code != rec_cpt), 0 = not recoded, NULL = non-E/M"
+        }
+      }
+    },
+    {
+      "cluster_id": "indicators_cm",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Count-part indicator flags for filtering claim/member counts (COUNT PART only)",
+      "nl_triggers": [
+        "claims per 1000",
+        "utilization",
+        "member count",
+        "claim count",
+        "default indicator"
+      ],
+      "columns": {
+        "behavioral_health_indicator_cm": {
+          "type": "VARCHAR2",
+          "description": "'1' = this count row is for BH claims subset. Use with level_of_detail rows for BH utilization."
+        },
+        "medical_drugs_indicator_cm": {
+          "type": "VARCHAR2",
+          "description": "'1' = this count row is for medical drugs subset."
+        },
+        "telehealth_indicator_cm": {
+          "type": "VARCHAR2",
+          "description": "'1' = this count row is for telehealth subset."
+        },
+        "default_indicator_cm": {
+          "type": "VARCHAR2",
+          "description": "'1' = default (ALL claims, no BH/telehealth/medical_drugs filter). Use as the denominator for claims per 1000 members."
+        },
+        "level_of_detail": {
+          "type": "VARCHAR2",
+          "description": "Aggregation granularity for count rows. 30 values: period, period_lob, period_lob_prod, quarter, quarter_lob, etc. NULL in SUM PART rows."
+        },
+        "claim_count": {
+          "type": "NUMBER",
+          "description": "Distinct claim count at the level_of_detail granularity. Only meaningful when level_of_detail IS NOT NULL."
+        },
+        "member_count": {
+          "type": "NUMBER",
+          "description": "Distinct member count. ONLY available at: period, period_lob, quarter, quarter_lob levels. 0 at finer grains."
+        }
+      }
+    },
+    {
+      "cluster_id": "financials",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Financial measures \u2014 paid, savings, volume (SUM PART only, level_of_detail IS NULL)",
+      "nl_triggers": [
+        "paid",
+        "GPV",
+        "NPV",
+        "savings",
+        "adjustments",
+        "cost",
+        "spend",
+        "volume",
+        "amount",
+        "revenue",
+        "money",
+        "dollars",
+        "financial"
+      ],
+      "columns": {
+        "paid": {
+          "type": "NUMBER",
+          "description": "Non-bypassed paid amount (after copay/coinsurance/deductible, claims that went through rule engine)"
+        },
+        "gpv": {
+          "type": "NUMBER",
+          "description": "Gross Payment Variance \u2014 total invoiced savings for original lines (non-bypassed only)"
+        },
+        "npv": {
+          "type": "NUMBER",
+          "description": "Net Payment Variance \u2014 net savings (orig_pv + adj_pv, non-bypassed only)"
+        },
+        "adjustments": {
+          "type": "NUMBER",
+          "description": "Invoiced payment variance for adjusted records (appeals + overturns, non-bypassed only)"
+        },
+        "total_received_spends": {
+          "type": "NUMBER",
+          "description": "Total received paid amount (bypassed + non-bypassed)"
+        },
+        "bypass_spends": {
+          "type": "NUMBER",
+          "description": "Paid amount for bypassed lines only"
+        },
+        "submitted_amount": {
+          "type": "NUMBER",
+          "description": "Amount billed by provider (billed/submitted amount)"
+        },
+        "allowed_amount": {
+          "type": "NUMBER",
+          "description": "Maximum allowed amount for the procedure"
+        },
+        "allowed_units": {
+          "type": "NUMBER",
+          "description": "Maximum allowed units for the procedure"
+        }
+      }
+    },
+    {
+      "cluster_id": "volume",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Line count measures (SUM PART only, level_of_detail IS NULL)",
+      "nl_triggers": [
+        "lines",
+        "edited",
+        "bypassed",
+        "volume",
+        "total received",
+        "hit",
+        "count lines"
+      ],
+      "columns": {
+        "total_received_lines": {
+          "type": "NUMBER",
+          "description": "Total claim lines received (bypassed + non-bypassed)"
+        },
+        "non_bypassed_lines": {
+          "type": "NUMBER",
+          "description": "Lines that went through the rule engine (denominator for edit rate)"
+        },
+        "edited_lines": {
+          "type": "NUMBER",
+          "description": "Lines that were edited/hit by rules (numerator for edit rate)"
+        },
+        "adjusted_lines": {
+          "type": "NUMBER",
+          "description": "Lines with adjustments (appeals + overturns)"
+        },
+        "bypassed_lines": {
+          "type": "NUMBER",
+          "description": "Lines that were bypassed (not processed by rule engine)"
+        }
+      }
+    },
+    {
+      "cluster_id": "rules",
+      "table": "PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "description": "Rule and policy columns \u2014 decision points, medical policies",
+      "nl_triggers": [
+        "rule",
+        "policy",
+        "decision point",
+        "DP key",
+        "medical policy",
+        "package",
+        "edit"
+      ],
+      "columns": {
+        "dp_key": {
+          "type": "VARCHAR2",
+          "description": "Decision Point Key for the rule that edited the line"
+        },
+        "dp_key_desc": {
+          "type": "VARCHAR2",
+          "description": "Description of the Decision Point Key rule"
+        },
+        "medical_policy": {
+          "type": "VARCHAR2",
+          "description": "Medical Policy title for the rule (126 distinct values)"
+        },
+        "policy_package_indicator": {
+          "type": "VARCHAR2",
+          "description": "Multiple policy packages the rule is associated with"
+        },
+        "policy_collection": {
+          "type": "VARCHAR2",
+          "description": "Simplified policy grouping: AMA, Behavioral Health, CMS, COVID-19, Laboratory, Other Policies, Telehealth Services, Waste & Abuse"
+        }
+      }
+    }
+  ],
+  "joins": []
+}

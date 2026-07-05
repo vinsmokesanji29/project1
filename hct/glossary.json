@@ -1,0 +1,193 @@
+{
+  "terms": [
+    {
+      "term": "GPV",
+      "definition": "Gross Payment Variance — total invoiced payment variance for original (non-adjusted) lines. Represents Cotiviti's gross identified savings before adjustments.",
+      "synonyms": [
+        "gross savings",
+        "invoiced savings",
+        "original savings"
+      ]
+    },
+    {
+      "term": "NPV",
+      "definition": "Net Payment Variance — net savings after adjustments (GPV + adjustments). NPV = orig_pv + adj_pv. This is the final net savings.",
+      "synonyms": [
+        "net savings",
+        "net payment variance",
+        "realized savings"
+      ]
+    },
+    {
+      "term": "NPV%",
+      "definition": "NPV Rate — NPV as percentage of paid (non-bypassed). Formula: SUM(npv) * 100.0 / SUM(paid). Also called yield or savings rate.",
+      "synonyms": [
+        "NPV rate",
+        "yield",
+        "savings rate",
+        "savings percentage"
+      ]
+    },
+    {
+      "term": "APV%",
+      "definition": "Adjustment Payment Variance Rate — adjustments as percentage of GPV. Formula: SUM(adjustments) / SUM(gpv). Measures appeal/overturn rate.",
+      "synonyms": [
+        "APV rate",
+        "adjustment rate",
+        "appeal rate",
+        "overturn rate"
+      ]
+    },
+    {
+      "term": "Unit Cost",
+      "definition": "Average paid per non-bypassed line. Formula: SUM(paid) / SUM(non_bypassed_lines). Used to measure price trends per service.",
+      "synonyms": [
+        "paid per line",
+        "cost per line",
+        "average cost per line"
+      ]
+    },
+    {
+      "term": "Edit Rate",
+      "definition": "Number of edited (hit) lines per 1000 non-bypassed lines. Formula: SUM(edited_lines) * 1000 / SUM(non_bypassed_lines). Measures rule engine effectiveness.",
+      "synonyms": [
+        "edits per 1000",
+        "hit rate",
+        "edit frequency"
+      ]
+    },
+    {
+      "term": "Claims per 1000 Members",
+      "definition": "Utilization metric: distinct claims per 1000 distinct members. Requires COUNT PART data. Formula: SUM(claim_count) * 1000 / SUM(member_count). Must match level_of_detail to GROUP BY dimensions.",
+      "synonyms": [
+        "utilization",
+        "claims per 1000",
+        "utilization rate",
+        "claim frequency"
+      ]
+    },
+    {
+      "term": "Level of Detail",
+      "definition": "Controls which aggregation granularity to use for claim/member counts. The table has pre-aggregated counts at 24 period-based LODs organized as a pyramid: Overall Trends (period/period_lob/period_lob_prod) → Geographical (period_state/period_lob_state/period_lob_prod_state) → Drill Down (add betos/icd/pos/spec) → Key Drivers (deepest: cpt/icd/pos/spec within betos). NULL means SUM PART (financial data). Member counts only at 4 levels: period, period_lob, period_state, period_lob_state.",
+      "synonyms": [
+        "LOD",
+        "aggregation level",
+        "grain"
+      ]
+    },
+    {
+      "term": "Two-Chunk Design",
+      "definition": "HEALTHCARE_PHASE2_PPI is a UNION of SUM PART (financial metrics, level_of_detail IS NULL) and COUNT PART (claim/member counts, level_of_detail has a value). Never mix them in one query without understanding which rows to use.",
+      "synonyms": [
+        "sum part",
+        "count part",
+        "dual-purpose table"
+      ]
+    },
+    {
+      "term": "Same Store",
+      "definition": "A payer+LOB+product_type combination that has been continuously active (non-zero GPV ≥90% of months) for the entire 36-month reporting window. Use same_store=1 for consistent YoY trend analysis.",
+      "synonyms": [
+        "same store",
+        "comparable base",
+        "consistent payers"
+      ]
+    },
+    {
+      "term": "BETOS",
+      "definition": "Restructured BETOS Classification System (RBCS). Categorizes CPT/HCPCS codes into categories (E/M, Surgeries, Imaging, etc.), subcategories (52), and families (180).",
+      "synonyms": [
+        "RBCS",
+        "BETOS category",
+        "procedure classification"
+      ]
+    },
+    {
+      "term": "Behavioral Health",
+      "definition": "Claims identified as behavioral health via multiple criteria: BETOS subcategory='Behavioral Health Services', OR ICD code starts with F, OR BH specialty, OR POS 52/53/57. Use behavioral_health_indicator=1 for financial, behavioral_health_indicator_cm='1' for counts.",
+      "synonyms": [
+        "BH",
+        "mental health",
+        "psychiatric"
+      ]
+    },
+    {
+      "term": "Period Indicator",
+      "definition": "Segments rolling 12-month windows: P = most recent, P_lag1 = prior year, P_lag2 = 2 years ago. Use for YoY comparison. Each period spans exactly 12 months.",
+      "synonyms": [
+        "period",
+        "rolling window",
+        "YoY window"
+      ]
+    },
+    {
+      "term": "Bypass",
+      "definition": "Bypassed lines are excluded from rule processing (no GPV/NPV). paid = non-bypassed paid, bypass_spends = bypassed paid, total_received_spends = both. GPV/NPV/adjustments only apply to non-bypassed.",
+      "synonyms": [
+        "bypassed",
+        "excluded lines",
+        "bypass flag"
+      ]
+    },
+    {
+      "term": "PPM",
+      "definition": "Payment Policy Management — Cotiviti's primary rule engine for detecting overpayments based on payment policies (CMS, AMA, custom).",
+      "synonyms": [
+        "payment policy",
+        "payment accuracy"
+      ]
+    },
+    {
+      "term": "CV",
+      "definition": "Coding Validation — Cotiviti's coding review engine that identifies improper coding (unbundling, upcoding, etc.).",
+      "synonyms": [
+        "coding validation",
+        "coding review"
+      ]
+    },
+    {
+      "term": "CPR",
+      "definition": "Claim Pattern Review — identifies unusual claim patterns. Same underlying logic as FWA but branded differently for non-Aetna clients.",
+      "synonyms": [
+        "claim pattern",
+        "claim pattern review"
+      ]
+    },
+    {
+      "term": "FWA",
+      "definition": "Fraud Waste & Abuse — Aetna-specific claims review solution. Same logic as CPR but branded as FWA for Aetna clients.",
+      "synonyms": [
+        "fraud",
+        "waste and abuse",
+        "fraud waste abuse"
+      ]
+    },
+    {
+      "term": "Default Indicator CM",
+      "definition": "default_indicator_cm = '1' means the count row represents ALL claims (not subsetted to BH/telehealth/medical_drugs). Use as the denominator for claims per 1000 members calculations.",
+      "synonyms": [
+        "default counts",
+        "total denominator",
+        "all-claims count"
+      ]
+    },
+    {
+      "term": "LOS",
+      "definition": "Level of Service — maps E&M CPT codes to complexity levels 1-5. Higher LOS = more complex/expensive visit. Only populated for E&M codes, NULL otherwise. LOS is CATEGORICAL — never average it. For LOS trend analysis, calculate % share of non_bypassed_lines at each LOS level over time (GROUP BY period_indicator, los). This shows the shift in service complexity distribution.",
+      "synonyms": [
+        "level of service",
+        "complexity level",
+        "E&M level",
+        "service complexity"
+      ]
+    },
+    {
+      "term": "Duration of Service",
+      "definition": "For Behavioral Health, duration of service refers to psychotherapy session length, NOT the LOS (Level of Service) column. Duration is derived from CPT codes: 30 Minutes = CPT 90832, 90833 (short-duration psychotherapy). 45 Minutes = CPT 90834, 90836 (standard psychotherapy). 60 Minutes = CPT 90837, 90838 (extended psychotherapy). NEVER use the 'los' column for duration of service — 'los' is a coding complexity level (1-5), not time."
+    },
+    {
+      "term": "Payment Integrity Trends",
+      "definition": "When a user asks for 'Payment Integrity trends' or 'PI trends' for a customer, provide a composite view of THREE metrics over time: (1) GPV% = SUM(gpv) * 100 / SUM(paid), (2) NPV% = SUM(npv) * 100 / SUM(paid), (3) Utilization = claims per 1000 members (at period level). All three should be shown per period_label. This is the standard Payment Integrity health check view."
+    }
+  ]
+}

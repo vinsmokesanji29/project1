@@ -1,0 +1,140 @@
+{
+  "metrics": [
+    {
+      "metric_id": "TOTAL_PAID",
+      "name": "Total Paid",
+      "description": "Total non-bypassed paid amount",
+      "formula": "SUM(\"paid\")",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["paid", "spend", "cost", "total spend", "dollars paid"]
+    },
+    {
+      "metric_id": "TOTAL_GPV",
+      "name": "Total GPV",
+      "description": "Gross Payment Variance — total invoiced savings for original edits",
+      "formula": "SUM(\"gpv\")",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["GPV", "gross savings", "invoiced savings"]
+    },
+    {
+      "metric_id": "TOTAL_NPV",
+      "name": "Total NPV",
+      "description": "Net Payment Variance — net savings after adjustments",
+      "formula": "SUM(\"npv\")",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["NPV", "net savings", "net payment variance"]
+    },
+    {
+      "metric_id": "NPV_RATE",
+      "name": "NPV Rate (NPV%)",
+      "description": "Net savings as percent of paid (non-bypassed). This is the standard NPV% formula for HCT.",
+      "formula": "SUM(\"npv\") * 100.0 / NULLIF(SUM(\"paid\"), 0)",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["NPV%", "NPV rate", "savings rate", "yield"]
+    },
+    {
+      "metric_id": "APV_RATE",
+      "name": "APV Rate (APV%)",
+      "description": "Adjustment rate — adjustments as percent of GPV",
+      "formula": "SUM(\"adjustments\") / NULLIF(SUM(\"gpv\"), 0)",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["APV%", "adjustment rate", "appeal rate", "overturn rate"]
+    },
+    {
+      "metric_id": "UNIT_COST",
+      "name": "Unit Cost (Paid per Line)",
+      "description": "Average paid per non-bypassed line",
+      "formula": "SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0)",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["unit cost", "paid per line", "cost per line", "average cost"]
+    },
+    {
+      "metric_id": "EDIT_RATE",
+      "name": "Edit Rate (Edits per 1000 Lines)",
+      "description": "Number of edited lines per 1000 non-bypassed lines",
+      "formula": "SUM(\"edited_lines\") * 1000.0 / NULLIF(SUM(\"non_bypassed_lines\"), 0)",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["edit rate", "edits per 1000", "hit rate"]
+    },
+    {
+      "metric_id": "CLAIMS_PER_1000",
+      "name": "Claims per 1000 Members",
+      "description": "Utilization metric: distinct claims per 1000 distinct members. REQUIRES TWO SEPARATE CTEs. CTE1 (claims): level_of_detail = full visual granularity LOD. CTE2 (members): level_of_detail = mapped member LOD derived FROM THE CLAIMS LOD (not output columns). MAPPING: if claims LOD contains betos/icd/cpt/pos/spec → member LOD MUST be 'period_lob_state'. If claims LOD contains product only → strip product (e.g. period_lob_prod → period_lob). Otherwise map directly. NEVER use 'period' as member LOD when claims LOD has clinical dimensions. Use default_indicator_cm='1' for members.",
+      "formula": "SUM(\"claim_count\") * 1000.0 / NULLIF(SUM(\"member_count\"), 0)",
+      "data_part": "COUNT",
+      "filter": "\"level_of_detail\" = '<appropriate_level>'",
+      "member_lod_rule": "Derive from claims LOD: betos/icd/cpt/pos/spec → period_lob_state; product-only → strip product; else direct map. NEVER use 'period' for clinical LODs.",
+      "aliases": ["claims per 1000", "utilization", "claim rate", "utilization rate"]
+    },
+    {
+      "metric_id": "TOTAL_RECEIVED_SPENDS",
+      "name": "Total Received Spend",
+      "description": "Total incoming volume in dollars (bypassed + non-bypassed)",
+      "formula": "SUM(\"total_received_spends\")",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["total received", "incoming volume", "TBA", "total billed"]
+    },
+    {
+      "metric_id": "TOTAL_RECEIVED_LINES",
+      "name": "Total Received Lines",
+      "description": "Total claim lines received",
+      "formula": "SUM(\"total_received_lines\")",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["total lines", "received lines", "volume lines"]
+    },
+    {
+      "metric_id": "PERCENT_SHARE_OF_PAID",
+      "name": "Percent Share of Paid",
+      "description": "Share of a subset's paid relative to total paid. Use CASE WHEN for numerator and denominator.",
+      "formula": "SUM(CASE WHEN <filter> THEN \"paid\" ELSE 0 END) / NULLIF(SUM(\"paid\"), 0)",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["share of paid", "percent of spend", "share", "proportion"]
+    },
+    {
+      "metric_id": "TOTAL_ADJUSTMENTS",
+      "name": "Total Adjustments",
+      "description": "Sum of adjustment dollars (appeals + overturns)",
+      "formula": "SUM(\"adjustments\")",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["adjustments", "appeals", "overturns"]
+    },
+    {
+      "metric_id": "BYPASS_RATE",
+      "name": "Bypass Rate",
+      "description": "Percent of lines that are bypassed",
+      "formula": "SUM(\"bypassed_lines\") * 1.0 / NULLIF(SUM(\"total_received_lines\"), 0)",
+      "data_part": "SUM",
+      "filter": "\"level_of_detail\" IS NULL",
+      "aliases": ["bypass rate", "bypassed percent"]
+    },
+    {
+      "metric_id": "CLAIM_COUNT",
+      "name": "Claim Count",
+      "description": "Distinct claim count at specified level_of_detail",
+      "formula": "SUM(\"claim_count\")",
+      "data_part": "COUNT",
+      "filter": "\"level_of_detail\" = '<appropriate_level>'",
+      "aliases": ["claim count", "number of claims", "claims"]
+    },
+    {
+      "metric_id": "MEMBER_COUNT",
+      "name": "Member Count",
+      "description": "Distinct member count. Only available at 4 levels: period, period_lob, period_state, period_lob_state. Never available at deeper LODs containing product, betos, cpt, icd, pos, or spec.",
+      "formula": "SUM(\"member_count\")",
+      "data_part": "COUNT",
+      "filter": "\"level_of_detail\" IN ('period','period_lob','period_state','period_lob_state')",
+      "aliases": ["member count", "members", "subscribers", "lives"]
+    }
+  ]
+}

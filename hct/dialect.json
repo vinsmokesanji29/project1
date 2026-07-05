@@ -1,0 +1,201 @@
+{
+  "dialect": "Oracle SQL (ADB)",
+  "rules": [
+    {
+      "id": "COLUMN_QUOTING",
+      "rule": "ALL column names MUST be double-quoted because they are stored in lowercase. Example: SELECT \"paid\", \"npv\", \"customer\" FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "TABLE_NAME",
+      "rule": "Table name is PROD_DATASETS.HEALTHCARE_PHASE2_PPI — always use full schema-qualified name, unquoted (uppercase).",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "TWO_CHUNK_DESIGN",
+      "rule": "The table is a UNION of two logical datasets: (1) SUM PART: level_of_detail IS NULL — has all financial measures (paid, gpv, npv, adjustments, total_received_spends/lines, edited_lines, bypass_spends, etc.) but claim_count and member_count are always 0. (2) COUNT PART: level_of_detail HAS A VALUE — has claim_count and/or member_count populated but all financial measures are NULL/0. NEVER mix financial and count metrics in a single query without understanding which rows to use.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "FINANCIAL_QUERIES",
+      "rule": "For financial metrics (paid, gpv, npv, adjustments, total_received_spends, bypass_spends, edited_lines, non_bypassed_lines, allowed_amount, submitted_amount, allowed_units): filter WHERE \"level_of_detail\" IS NULL",
+      "priority": "HIGH"
+    },
+    {
+      "id": "COUNT_QUERIES",
+      "rule": "For claim_count or member_count: filter WHERE \"level_of_detail\" = '<appropriate_level>'. Choose the LOD based on which dimensions are in the visual/GROUP BY. member_count is ONLY available at 4 levels: period, period_lob, period_state, period_lob_state. All other LODs only have claim_count. NEVER attempt member_count at any LOD containing product, betos, cpt, icd, pos, or spec.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "LEVEL_OF_DETAIL_SELECTION",
+      "rule": "LOD selection follows a pyramid. Build the LOD string by appending suffixes IN ORDER based on visual dimensions: period → _lob → _prod → _state → then ONE of the clinical branches. HIERARCHY: (1) OVERALL TRENDS: period (time only), period_lob (+LOB), period_lob_prod (+product). (2) GEOGRAPHICAL: period_state (+state/region), period_lob_state, period_lob_prod_state. (3) DRILL DOWN: period_lob_prod_state_betos, period_lob_prod_state_betos_subcat, period_lob_prod_state_betos_family, period_lob_prod_state_icd, period_lob_prod_state_pos, period_lob_prod_state_spec. (4) KEY DRIVERS (deepest): period_lob_prod_state_betos_cpt, period_lob_prod_state_betos_spec_cpt, period_lob_prod_state_betos_pos_cpt, period_lob_prod_state_betos_icd/subcat_icd/family_icd, period_lob_prod_state_betos_pos/subcat_pos/family_pos, period_lob_prod_state_betos_spec/subcat_spec/family_spec. CRITICAL RULES: (A) _lob is ALWAYS required before _prod — there is NO 'period_prod'. (B) _state is ALWAYS required before any clinical suffix (betos/icd/pos/spec) — there is NO 'period_lob_prod_betos'. (C) If region is in the visual, use a _state LOD (region derives from state). (D) Use case triggers: 'trend/over time' → Overall; 'state/region' → add _state; 'breakdown/distribution' → Drill Down; 'top/drivers/highest' → Key Drivers.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "CLAIMS_PER_1000",
+      "rule": "Claims per 1000 members = SUM(\"claim_count\") * 1000.0 / NULLIF(SUM(\"member_count\"), 0). IMPORTANT: claim_count and member_count MUST come from SEPARATE subqueries/CTEs because they use DIFFERENT level_of_detail values. Pattern: CTE1 = claim numerator (LOD determined by all columns and filters in the query — see CLAIM_LOD_DETERMINATION), CTE2 = member denominator (LOD determined by dimensions in the USER QUESTION — see MEMBER_LOD_SELECTION below). MEMBER LOD SELECTION (based on dimensions in the USER QUESTION, NOT the claims LOD): If the user mentions NEITHER LOB nor state/region → member LOD = 'period'. If user mentions LOB only → member LOD = 'period_lob'. If user mentions state/region only → member LOD = 'period_state'. If user mentions BOTH LOB and state/region → member LOD = 'period_lob_state'. These are the ONLY 4 valid member LODs. Use default_indicator_cm='1' for total member denominator. Join CTEs on shared dimensions (period_indicator + any LOD dims present in BOTH CTEs like line_of_business, final_state). If member LOD = 'period' and claims CTE has finer dimensions (e.g. cpt_code), the member total is the same for all rows — JOIN on period_indicator only. NEVER self-join the table with both filters in the same WHERE clause.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "LOD_MANDATORY_FIELDS",
+      "rule": "The COUNT PART rows (level_of_detail IS NOT NULL) contain customer, customer_segment, idn_yn, blues_indicator as row-level attributes in ALL LODs. However, do NOT automatically include them in GROUP BY. Only include a column in GROUP BY or SELECT if the user's question explicitly asks for that dimension. If the user asks 'by specialty' → GROUP BY spec_desc only. If the user asks 'by customer' → include customer. SUM() will correctly aggregate across customers/segments when they are not in GROUP BY. NEVER add customer, customer_segment, idn_yn, or blues_indicator to GROUP BY unless the user explicitly requests customer-level, segment-level, IDN, or Blues breakdowns.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "MEMBER_LOD_MAPPING",
+      "rule": "MANDATORY: When computing claims per 1000 or any metric requiring member_count, the member LOD is determined by the dimensions the user explicitly mentions in their question — NOT by the claims LOD. Rule: include _lob in member LOD ONLY if the user's question mentions line of business. Include _state ONLY if the user's question mentions state or region. If neither is mentioned, member LOD = 'period'. Valid member LODs: period, period_lob, period_state, period_lob_state. NEVER use member_count at a LOD deeper than period_lob_state. Examples: 'utilization CAGR by CPT code' (no LOB/state asked) → member LOD = 'period'. 'utilization by LOB' → member LOD = 'period_lob'. 'utilization by state' → member LOD = 'period_state'. 'utilization by LOB and state' → member LOD = 'period_lob_state'.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "BETOS_HIERARCHY_REQUIREMENT",
+      "rule": "BETOS clinical fields form a strict hierarchy: betos_category → betos_subcategory → betos_family. When using a LOD with _betos_subcat, the query MUST also include betos_category in GROUP BY/WHERE. When using _betos_family, MUST include betos_category AND betos_subcategory. For CPT driver LODs (_betos_cpt, _betos_spec_cpt, _betos_pos_cpt), all three hierarchy fields (category, subcategory, family) are required.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PAYER_SHORT_AVAILABILITY",
+      "rule": "The payer_short column is ONLY available in the first 5 LODs: period, period_lob, period_lob_prod, period_state, period_lob_state. From period_lob_prod_state onwards, payer_short is NOT part of the LOD — do NOT include it in GROUP BY at those levels. Use customer (always available) instead for payer-level analysis at deeper LODs.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "LOD_COLUMN_MAPPING",
+      "rule": "Exact columns available at each level_of_detail (only these columns exist in COUNT PART rows for that LOD): period=[customer, payer_short, blues_indicator, idn_yn, customer_segment, period_indicator, period_label]. period_lob=[customer, payer_short, blues_indicator, idn_yn, customer_segment, period_indicator, period_label, line_of_business]. period_lob_prod=[customer, payer_short, blues_indicator, idn_yn, customer_segment, period_indicator, period_label, line_of_business, product_type]. period_state=[customer, payer_short, blues_indicator, idn_yn, customer_segment, period_indicator, period_label, final_state, region]. period_lob_state=[customer, payer_short, blues_indicator, idn_yn, customer_segment, period_indicator, period_label, line_of_business, final_state, region]. period_lob_prod_state=[customer, blues_indicator, idn_yn, customer_segment, period_indicator, period_label, line_of_business, product_type, final_state, region]. period_lob_prod_state_betos=[...period_lob_prod_state + betos_category]. period_lob_prod_state_betos_subcat=[...period_lob_prod_state + betos_category, betos_subcategory]. period_lob_prod_state_betos_family=[...period_lob_prod_state + betos_category, betos_subcategory, betos_family]. period_lob_prod_state_icd=[...period_lob_prod_state + icd1_grp_cd, icd1_grp_desc]. period_lob_prod_state_pos=[...period_lob_prod_state + pos_code, pos_desc]. period_lob_prod_state_spec=[...period_lob_prod_state + spec_desc]. period_lob_prod_state_betos_cpt=[...period_lob_prod_state + betos_category, betos_subcategory, betos_family, cpt_code, cpt_desc]. period_lob_prod_state_betos_spec_cpt=[...period_lob_prod_state + betos_category, betos_subcategory, betos_family, spec_desc, cpt_code, cpt_desc]. period_lob_prod_state_betos_pos_cpt=[...period_lob_prod_state + betos_category, betos_subcategory, betos_family, pos_code, pos_desc, cpt_code, cpt_desc]. period_lob_prod_state_betos_icd=[...period_lob_prod_state + betos_category, icd1_grp_cd, icd1_grp_desc]. period_lob_prod_state_betos_subcat_icd=[...period_lob_prod_state + betos_category, betos_subcategory, icd1_grp_cd, icd1_grp_desc]. period_lob_prod_state_betos_family_icd=[...period_lob_prod_state + betos_category, betos_family, icd1_grp_cd, icd1_grp_desc]. period_lob_prod_state_betos_pos=[...period_lob_prod_state + betos_category, pos_code, pos_desc]. period_lob_prod_state_betos_subcat_pos=[...period_lob_prod_state + betos_category, betos_subcategory, pos_code, pos_desc]. period_lob_prod_state_betos_family_pos=[...period_lob_prod_state + betos_category, betos_family, pos_code, pos_desc]. period_lob_prod_state_betos_spec=[...period_lob_prod_state + betos_category, spec_desc]. period_lob_prod_state_betos_subcat_spec=[...period_lob_prod_state + betos_category, betos_subcategory, spec_desc]. period_lob_prod_state_betos_family_spec=[...period_lob_prod_state + betos_category, betos_family, spec_desc]. DO NOT query columns not listed for a given LOD in COUNT PART rows.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "CM_INDICATORS",
+      "rule": "The _cm suffix columns (behavioral_health_indicator_cm, medical_drugs_indicator_cm, telehealth_indicator_cm, default_indicator_cm) are ONLY meaningful in COUNT PART rows. They filter which subset of claims/members are counted: behavioral_health_indicator_cm='1' = BH subset, medical_drugs_indicator_cm='1' = medical drugs subset, telehealth_indicator_cm='1' = telehealth subset, default_indicator_cm='1' = ALL claims (no subset filter, the default denominator).",
+      "priority": "HIGH"
+    },
+    {
+      "id": "NON_CM_INDICATORS",
+      "rule": "The non-_cm indicators (behavioral_health_indicator, telehealth_indicator, medical_drugs_indicator, dnb_indicator, enm_indicator, surgeries_indicator, sepsis_indicator) are meaningful in SUM PART rows (financial queries). Use these to filter financial metrics. Example: WHERE \"behavioral_health_indicator\" = 1 for BH financial analysis. EXCEPTION: For E/M filtering, prefer \"betos_category\" = 'E/M' over \"enm_indicator\" = 1 (enm_indicator has known data issues).",
+      "priority": "HIGH"
+    },
+    {
+      "id": "PERIOD_INDICATOR",
+      "rule": "period_indicator segments rolling 12-month windows: 'P' = most recent 12 months, 'P_lag1' = prior 12 months, 'P_lag2' = two years ago. Use for YoY comparison and CAGR. period_label shows formatted date range (e.g. \"Q2'24-Q1'25\").",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "SAME_STORE",
+      "rule": "same_store = 1 means the payer_short+lob+product_type combination has been continuously active for ≥90% of the 36-month reporting window AND their min_invoice_date predates the window. Use for apples-to-apples trend comparison. Only relevant for financial queries (SUM PART).",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "BYPASS_LOGIC",
+      "rule": "paid = non-bypassed paid (claims that went through the rule engine). bypass_spends = paid for bypassed lines. total_received_spends = paid + bypass_spends. non_bypassed_lines = count of lines NOT bypassed. bypassed_lines = count of bypassed lines. total_received_lines = non_bypassed_lines + bypassed_lines. Financial metrics (gpv, npv, adjustments, edited_lines) only apply to non-bypassed lines.",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "SOLUTION_LOGIC",
+      "rule": "solution has 4 values: PPM (Payment Policy Management), CV (Coding Validation), CPR (Claim Pattern Review — non-Aetna), FWA (Fraud Waste & Abuse — Aetna only). No mandatory filter — include all solutions unless user specifies.",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "PAGINATION",
+      "rule": "Use FETCH FIRST N ROWS ONLY (not LIMIT). Example: ORDER BY \"paid\" DESC FETCH FIRST 10 ROWS ONLY",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "NO_TABLE_ALIAS_AS",
+      "rule": "Do not use AS for table aliases. Use: FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI h (not AS h).",
+      "priority": "LOW"
+    },
+    {
+      "id": "CUSTOMER_NAME_MATCHING",
+      "rule": "Customer names are case-sensitive in the database. Always use exact case from the enum values. For fuzzy matching use: UPPER(\"customer\") LIKE UPPER('%pattern%'). Common shorthand: 'bcbs' = any Blue Cross Blue Shield customer, 'centene' = 'Centene', 'cigna' = 'Cigna', 'humana' = 'Humana', 'cvs' = 'CVS Health', 'elevance' = 'Elevance Health'.",
+      "priority": "MEDIUM"
+    },
+    {
+      "id": "SPEND_TREND_DEFAULT",
+      "rule": "When a user asks about 'spend trend', 'BH spend', or any subset spend over time, ALWAYS default to PERCENT SHARE of paid (not absolute dollars) unless they explicitly say 'total paid' or 'absolute'. Formula: SUM(CASE WHEN <subset_filter> THEN \"paid\" ELSE 0 END) * 100.0 / NULLIF(SUM(\"paid\"), 0). This shows the composition shift over time which is the standard HCT analytical pattern.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "YOY_TIME_COLUMN",
+      "rule": "For YoY trends, NEVER use the \"year\" column. ALWAYS use \"period_indicator\" (values: P, P_lag1, P_lag2) or \"period_label\" (formatted date range like \"Q2'24-Q1'25\"). The year column exists but is NOT the correct dimension for rolling-window YoY analysis. Order by: CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "LOS_ANALYSIS",
+      "rule": "LOS (Level of Service) is a CATEGORICAL field (values 1-5), not a continuous metric. NEVER use AVG(\"los\"). For LOS trend analysis, calculate the PERCENTAGE SHARE of non_bypassed_lines at each LOS level: GROUP BY \"period_indicator\", \"los\" then compute SUM(\"non_bypassed_lines\") * 100.0 / NULLIF(SUM(SUM(\"non_bypassed_lines\")) OVER (PARTITION BY \"period_indicator\"), 0). This shows the distribution shift across complexity levels over time.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "NO_ABSOLUTE_DOLLARS",
+      "rule": "NEVER output absolute dollar values (SUM(paid), SUM(gpv), SUM(npv), SUM(total_received_spends), etc.) as display columns. Always show PERCENTAGE SHARE or RATES only. Use SUM(x) * 100.0 / SUM(SUM(x)) OVER () for share within a group, or SUM(CASE WHEN <filter> THEN x ELSE 0 END) * 100.0 / NULLIF(SUM(x), 0) for subset share. For 'top N' ranking queries, SELECT only the dimension name (and optionally % share), use dollar values ONLY in ORDER BY internally. EXCEPTIONS: (1) Unit cost / paid per line (SUM(paid)/SUM(non_bypassed_lines)) is allowed as it's a rate. (2) Rates like NPV%, APV%, edit rate, bypass rate are allowed.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "PERIOD_ORDERING",
+      "rule": "For ALL YoY trend queries, always include \"period_indicator\" in GROUP BY and ORDER BY using the chronological CASE expression: ORDER BY CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END. NEVER use ORDER BY \"period_label\" — period_label is a formatted string that does NOT sort chronologically.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "DRIVER_DEFAULT_PERIOD",
+      "rule": "When querying driver/detail dimensions (pos_desc, spec_desc, icd1_grp_desc, icd1_grp_cd, cpt_code, cpt_desc, betos_subcategory, betos_family, medical_policy) WITHOUT a user-specified time period, always add WHERE \"period_indicator\" = 'P' to restrict to the current period. These granular breakdowns are only meaningful for the latest snapshot unless the user explicitly asks for trend.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "ENM_FILTER_PREFERENCE",
+      "rule": "For E/M (Evaluation & Management) filtering: PREFER using \"betos_category\" = 'E/M' instead of \"enm_indicator\" = 1. The enm_indicator column has known data issues and may return empty results. PRIMARY approach: WHERE \"betos_category\" = 'E/M'. FALLBACK: If a query using \"enm_indicator\" = 1 returns no rows, retry the same query with \"betos_category\" = 'E/M' instead. Both filters target the same logical subset (E/M category claims) but betos_category is authoritative.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "BH_ALWAYS_EM",
+      "rule": "BEHAVIORAL HEALTH (BH) DEFAULT SCOPE (CRITICAL): Whenever the user asks ANY question about Behavioral Health (BH spend, BH trends, BH utilization, BH anything), ALWAYS scope to E/M by adding AND \"betos_category\" = 'E/M'. This is the standard analytical scope — BH analysis means BH within E/M. Apply BOTH filters together: \"behavioral_health_indicator\" = 1 AND \"betos_category\" = 'E/M' (for SUM PART) or \"behavioral_health_indicator_cm\" = '1' AND \"betos_category\" = 'E/M' (for COUNT PART). THE ONLY EXCEPTION: if the user EXPLICITLY says 'BH outside E/M', 'BH beyond E/M', 'all BH categories', or 'BH excluding E/M scope' — then remove the betos_category filter and show all data where behavioral_health_indicator = 1. Default: ALWAYS include E/M filter for BH queries.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "SPEND_DRIVERS_PATTERN",
+      "rule": "When the user asks 'what is driving spend', 'drivers of spend increase/decrease', 'why is spend going up/down', or any variant about identifying CAUSES of spend changes — produce a DRIVER ANALYSIS with THREE metrics per driver: (1) spend share (% of total spend in current period P), (2) utilization CAGR (claims per 1000 growth, P vs P_lag2), (3) unit cost CAGR (paid per line growth, P vs P_lag2). Default driver dimension: \"icd1_grp_desc\" (ICD diagnostic groups). Show TOP 5 drivers ordered by spend share DESC. Pattern: TopN CTE → SpendShare CTE → Claims+Members→Utilization CTE → UnitCost CTE → JOIN all on the driver dimension. This shows WHAT is consuming spend (share) and WHETHER it's driven by volume (utilization CAGR) or price (unit cost CAGR).",
+      "priority": "HIGH"
+    },
+    {
+      "id": "UTILIZATION_VS_CAGR",
+      "rule": "When utilization is asked with ANY comparison framing — 'YoY utilization', 'utilization change', 'utilization CAGR', 'utilization growth', 'utilization comparison' — ALWAYS compute the CAGR of claims per 1000 members (P vs P_lag2, exponent 1/3). The ONLY exception is when the user explicitly asks for 'utilization trend' or 'utilization over time' — in that case, provide claims per 1000 values for each period (P_lag2, P_lag1, P) WITHOUT computing CAGR. Default behavior: if ambiguous, provide CAGR.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "UNIT_COST_VS_CAGR",
+      "rule": "When unit cost is asked with ANY comparison framing — 'YoY unit cost', 'unit cost change', 'unit cost CAGR', 'unit cost growth', 'how did unit cost change', 'paid per line change' — ALWAYS compute the CAGR of unit cost (SUM(paid)/SUM(non_bypassed_lines)) using P vs P_lag2, exponent 1/3. The ONLY exception is when the user explicitly asks for 'unit cost trend' or 'unit cost over time' — in that case, provide unit cost values for each period (P_lag2, P_lag1, P) WITHOUT computing CAGR. Default behavior: if ambiguous, provide CAGR. Unit cost = SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0). Uses the SUM PART (WHERE \"level_of_detail\" IS NULL).",
+      "priority": "HIGH"
+    },
+    {
+      "id": "CAGR_CALCULATION",
+      "rule": "CAGR formula: POWER(metric_P / NULLIF(metric_P_lag2, 0), 1.0 / 3) - 1. ALWAYS use exponent 1.0/3 for the 3-year rolling window (P vs P_lag2 = 3 periods apart). NEVER use 1.0/2 as the exponent. Only use period_indicators P and P_lag2 in the CAGR query (P_lag1 is not needed). When computing utilization CAGR: first calculate claims_per_1000 for both P and P_lag2 separately, then apply the CAGR formula. When computing unit cost CAGR: first calculate SUM(paid)/SUM(non_bypassed_lines) for both P and P_lag2 separately, then apply the CAGR formula.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "CLAIM_LOD_DETERMINATION",
+      "rule": "For claim_count queries, determine the level_of_detail by examining ALL columns used in GROUP BY and all dimension filters in WHERE. The LOD must contain every dimension referenced in the query. Example: if query groups by cpt_code and filters on betos_category and product_type, the LOD must include period + lob + prod + state + betos + cpt = 'period_lob_prod_state_betos_cpt'. Then derive the member LOD separately from the user's question per MEMBER_LOD_MAPPING (not from the claims LOD).",
+      "priority": "HIGH"
+    },
+    {
+      "id": "EXCLUDE_DUAL_AND_INPATIENT",
+      "rule": "Exclusion of 'Dual' (line_of_business) and 'Inpatient' (product_type) depends on the metric type:\n\n1. NON-COUNT METRICS (gpv, pad, npv, unit_cost, spend share, CAGR on financial metrics, trends on financial metrics): ALWAYS exclude BOTH — unconditionally add AND \"line_of_business\" != 'Dual' AND \"product_type\" != 'Inpatient' regardless of LOD or GROUP BY.\n\n2. COUNT / UTILIZATION METRICS (claim_count, member_count, claims_per_1000, utilization): Check the LOD dimensions first:\n   - LOD has \"line_of_business\" ONLY → exclude Dual only: AND \"line_of_business\" != 'Dual'\n   - LOD has \"product_type\" ONLY → exclude Inpatient only: AND \"product_type\" != 'Inpatient'\n   - LOD has BOTH \"line_of_business\" and \"product_type\" → exclude both: AND \"line_of_business\" != 'Dual' AND \"product_type\" != 'Inpatient'\n   - LOD has NEITHER (e.g. period-only, period+state) → do NOT add any exclusion filters.\n\nEXCEPTION: If the user EXPLICITLY asks to see Dual or Inpatient (e.g. 'show me Inpatient trends', 'include Dual LOB'), include them regardless of the above rules.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "DURATION_OF_SERVICE_VS_LOS",
+      "rule": "CRITICAL DISTINCTION: 'Duration of service' and 'LOS' (Level of Service) are DIFFERENT concepts. LOS = coding complexity level (categorical 1-5, stored in the \"los\" column). Duration of service = psychotherapy session TIME, derived via CPT code mapping: 30 Minutes (90832, 90833), 45 Minutes (90834, 90836), 60 Minutes (90837, 90838). When user asks about 'duration of service' for BH, use CASE WHEN on cpt_code to create time buckets. NEVER use the \"los\" column for duration questions.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "DISTRIBUTION_INCLUDES_PERIOD",
+      "rule": "When a user asks for a 'distribution' or 'breakdown' of any metric, ALWAYS include \"period_label\" and \"period_indicator\" in GROUP BY and show the distribution for EACH period. Use PARTITION BY \"period_indicator\" in the window function denominator so percentages sum to 100% within each period. This allows the user to see how the distribution shifts over time.",
+      "priority": "HIGH"
+    },
+    {
+      "id": "ENTITY_FILTERING",
+      "rule": "ENTITY FILTERING — MANDATORY LOOKUP (CRITICAL): When the user mentions ANY name/entity (customer, payer_short, medical_policy, spec_desc, betos_family, etc.), you MUST look it up in the enum values provided in context. If you find an EXACT match (case-insensitive), use = 'ExactStoredValue' with the stored spelling. If no exact match, use UPPER(\"column\") LIKE UPPER('%shortest_distinctive_keyword%'). NEVER guess a value that isn't in the enum.",
+      "priority": "CRITICAL"
+    },
+    {
+      "id": "CUSTOMER_VS_PAYER_SHORT",
+      "rule": "CUSTOMER vs PAYER_SHORT: \"customer\" contains COMPANY names (e.g. 'Humana', 'Centene', 'Elevance Health'). \"payer_short\" contains SHORT CODES (e.g. 'HUMCC', 'AETCM'). If the user mentions a company name → filter \"customer\". If they use a 5-letter code → filter \"payer_short\". For company names, look up the EXACT stored value from the customer enum first.",
+      "priority": "HIGH"
+    }
+  ],
+  "date_patterns": {}
+}

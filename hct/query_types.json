@@ -1,0 +1,31 @@
+{
+  "query_types": {
+    "sql": {
+      "description": "Data retrieval or aggregation — counts, sums, ratios, comparisons, breakdowns, trend analysis, Top-N rankings",
+      "tool": "sql_bridge",
+      "output_format": "tabular"
+    }
+  },
+  "viz_types": {
+    "table": {
+      "description": "Simple tabular display",
+      "best_for": "multi-column detail, lookup results, ranked lists"
+    },
+    "bar_chart": {
+      "description": "Horizontal or vertical bar chart",
+      "best_for": "comparing values across categories (BETOS, POS, LOB, region)"
+    },
+    "line_chart": {
+      "description": "Line chart over time",
+      "best_for": "trend analysis over period_label (utilization, NPV%, edit rate, paid)"
+    },
+    "single_value": {
+      "description": "Single KPI / scalar display",
+      "best_for": "one-number answers (total NPV%, overall edit rate, total paid)"
+    },
+    "none": {
+      "description": "No visualization — text/scalar result only",
+      "best_for": "simple counts or yes/no answers"
+    }
+  }
+}

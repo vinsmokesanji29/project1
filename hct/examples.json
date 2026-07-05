@@ -1,0 +1,366 @@
+{
+  "examples": [
+    {
+      "id": "HCT-Q01",
+      "question": "What is the trend in share of Behavioral Health paid within E/M category?",
+      "sql": "SELECT\n    \"period_label\",\n    SUM(CASE WHEN \"behavioral_health_indicator\" = 1 THEN \"paid\" ELSE 0 END) * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"bh_em_paid_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"betos_category\" = 'E/M'\nGROUP BY\n    \"period_label\",\n    \"period_indicator\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "BH",
+        "E/M",
+        "share",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q02",
+      "question": "What is the trend in Behavioral Health utilization (claims per 1000 members)?",
+      "sql": "WITH bh_claims_cte AS (\n    SELECT\n        \"period_label\",\n        \"period_indicator\",\n        SUM(\"claim_count\") AS bh_claim_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period'\n        AND \"behavioral_health_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\",\n        \"period_indicator\"\n),\ntotal_members_cte AS (\n    SELECT\n        \"period_label\",\n        SUM(\"member_count\") AS total_member_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\"\n)\nSELECT\n    c.\"period_label\",\n    c.bh_claim_count * 1000.0 / NULLIF(m.total_member_count, 0) AS claims_per_1000_members\nFROM\n    bh_claims_cte c\nJOIN\n    total_members_cte m ON c.\"period_label\" = m.\"period_label\"\nORDER BY\n    CASE c.\"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "BH",
+        "utilization",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q03",
+      "question": "What is the trend in Behavioral Health unit cost (paid per line)?",
+      "sql": "SELECT\n    \"period_label\",\n    SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS \"bh_unit_cost\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\nGROUP BY\n    \"period_label\",\n    \"period_indicator\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "BH",
+        "unit cost",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q04",
+      "question": "What is the Behavioral Health NPV% trend by period?",
+      "sql": "SELECT\n    \"period_label\",\n    SUM(\"npv\") * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"bh_npv_percent\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\nGROUP BY\n    \"period_label\",\n    \"period_indicator\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "BH",
+        "NPV%",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q05",
+      "question": "What is the Behavioral Health edit rate (edits per 1000) trend by period?",
+      "sql": "SELECT\n    \"period_label\",\n    SUM(\"edited_lines\") * 1000.0 / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS \"bh_edit_rate_per_1000\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\nGROUP BY\n    \"period_label\",\n    \"period_indicator\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "BH",
+        "edit rate",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q06",
+      "question": "Show me Behavioral Health paid by line of business over time",
+      "sql": "SELECT\n    \"period_label\",\n    \"line_of_business\",\n    SUM(CASE WHEN \"behavioral_health_indicator\" = 1 THEN \"paid\" ELSE 0 END) * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"bh_em_paid_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"betos_category\" = 'E/M'\nGROUP BY\n    \"period_label\",\n    \"line_of_business\",\n    \"period_indicator\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END,\n    \"line_of_business\"",
+      "tags": [
+        "BH",
+        "LOB",
+        "spend share",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q07",
+      "question": "What is the share of Behavioral Health paid by product type over time?",
+      "sql": "SELECT\n    \"period_indicator\",\n    \"product_type\",\n    SUM(CASE WHEN \"behavioral_health_indicator\" = 1 THEN \"paid\" ELSE 0 END) * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"bh_em_paid_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"betos_category\" = 'E/M'\nGROUP BY\n    \"period_indicator\",\n    \"product_type\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END,\n    \"product_type\"",
+      "tags": [
+        "BH",
+        "product_type",
+        "spend share",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q08",
+      "question": "What are the Behavioral Health claims per 1000 members by line of business over time?",
+      "sql": "WITH bh_claims_cte AS (\n    SELECT\n        \"period_label\",\n        \"period_indicator\",\n        \"line_of_business\",\n        SUM(\"claim_count\") AS bh_claim_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period_lob'\n        AND \"behavioral_health_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\",\n        \"period_indicator\",\n        \"line_of_business\"\n),\ntotal_members_cte AS (\n    SELECT\n        \"period_label\",\n        \"line_of_business\",\n        SUM(\"member_count\") AS total_member_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period_lob'\n        AND \"default_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\",\n        \"line_of_business\"\n)\nSELECT\n    c.\"period_label\",\n    c.\"line_of_business\",\n    c.bh_claim_count * 1000.0 / NULLIF(m.total_member_count, 0) AS claims_per_1000_members\nFROM\n    bh_claims_cte c\nJOIN\n    total_members_cte m\nON\n    c.\"period_label\" = m.\"period_label\" AND c.\"line_of_business\" = m.\"line_of_business\"\nORDER BY\n    CASE c.\"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END,\n    c.\"line_of_business\"",
+      "tags": [
+        "BH",
+        "utilization",
+        "LOB",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q09",
+      "question": "What is the share of Behavioral Health paid by top BETOS subcategory?",
+      "sql": "SELECT\n    \"betos_subcategory\",\n    SUM(\"paid\") * 100.0 / SUM(SUM(\"paid\")) OVER () AS \"spend_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"betos_subcategory\"\nORDER BY\n    SUM(\"paid\") DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BH",
+        "BETOS",
+        "spend share",
+        "driver"
+      ]
+    },
+    {
+      "id": "HCT-Q10",
+      "question": "What are the Behavioral Health claims per 1000 members by top BETOS subcategory?",
+      "sql": "WITH bh_claims_cte AS (\n    SELECT\n        \"betos_subcategory\",\n        SUM(\"claim_count\") AS bh_claim_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period_lob_prod_state_betos_subcat'\n        AND \"behavioral_health_indicator_cm\" = '1'\n        AND \"period_indicator\" = 'P'\n    GROUP BY\n        \"betos_subcategory\"\n),\ntotal_members_cte AS (\n    SELECT\n        SUM(\"member_count\") AS total_member_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n        AND \"period_indicator\" = 'P'\n)\nSELECT\n    bc.\"betos_subcategory\",\n    bc.bh_claim_count * 1000.0 / NULLIF(tm.total_member_count, 0) AS claims_per_1000_members\nFROM\n    bh_claims_cte bc\nCROSS JOIN\n    total_members_cte tm\nORDER BY\n    claims_per_1000_members DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BH",
+        "utilization",
+        "BETOS",
+        "driver"
+      ],
+      "notes": "Claims from COUNT PART at betos_subcat LOD. Members from 'period' per MEMBER_LOD_MAPPING (no LOB/state in question → period). CROSS JOIN since members are a single total."
+    },
+    {
+      "id": "HCT-Q11",
+      "question": "What is the share of Behavioral Health paid by top places of service?",
+      "sql": "SELECT\n    \"pos_desc\",\n    SUM(\"paid\") * 100.0 / SUM(SUM(\"paid\")) OVER () AS \"spend_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"pos_desc\"\nORDER BY\n    SUM(\"paid\") DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BH",
+        "POS",
+        "spend share",
+        "driver"
+      ]
+    },
+    {
+      "id": "HCT-Q12",
+      "question": "What is the share of Behavioral Health paid by top specialties?",
+      "sql": "SELECT\n    \"spec_desc\",\n    SUM(\"paid\") * 100.0 / SUM(SUM(\"paid\")) OVER () AS \"spend_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"spec_desc\"\nORDER BY\n    SUM(\"paid\") DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BH",
+        "specialty",
+        "spend share",
+        "driver"
+      ]
+    },
+    {
+      "id": "HCT-Q13",
+      "question": "What is the share of Behavioral Health paid by top ICD diagnostic groups?",
+      "sql": "SELECT\n    \"icd1_grp_desc\",\n    SUM(\"paid\") * 100.0 / NULLIF(SUM(SUM(\"paid\")) OVER (), 0) AS \"spend_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"icd1_grp_desc\"\nORDER BY\n    SUM(\"paid\") DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BH",
+        "ICD",
+        "spend share",
+        "driver"
+      ]
+    },
+    {
+      "id": "HCT-Q14",
+      "question": "Show me the level of service (LOS) trend — percentage share of non-bypassed lines by LOS over time",
+      "sql": "SELECT\n    \"period_indicator\",\n    \"los\",\n    SUM(\"non_bypassed_lines\") AS \"total_non_bypassed_lines\",\n    SUM(\"non_bypassed_lines\") * 100.0 / NULLIF(SUM(SUM(\"non_bypassed_lines\")) OVER (PARTITION BY \"period_indicator\"), 0) AS \"percentage_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\nGROUP BY\n    \"period_indicator\",\n    \"los\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END,\n    \"los\"",
+      "tags": [
+        "LOS",
+        "trend",
+        "composition"
+      ]
+    },
+    {
+      "id": "HCT-Q15",
+      "question": "What is the total paid and NPV% for the current period by customer?",
+      "sql": "SELECT\n    \"customer\",\n    SUM(\"paid\") * 100.0 / SUM(SUM(\"paid\")) OVER () AS \"paid_share\",\n    SUM(\"npv\") * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"npv_percent\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"customer\"\nORDER BY\n    SUM(\"paid\") DESC",
+      "tags": [
+        "paid share",
+        "NPV%",
+        "customer",
+        "ranking"
+      ]
+    },
+    {
+      "id": "HCT-Q16",
+      "question": "What are the top 10 medical policies by GPV in the current period?",
+      "sql": "SELECT\n    \"medical_policy\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"medical_policy\"\nORDER BY\n    SUM(\"gpv\") DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "medical_policy",
+        "GPV",
+        "ranking"
+      ]
+    },
+    {
+      "id": "HCT-Q17",
+      "question": "Show me the telehealth claims per 1000 members trend over time",
+      "sql": "WITH telehealth_claims_cte AS (\n    SELECT\n        \"period_label\",\n        \"period_indicator\",\n        SUM(\"claim_count\") AS telehealth_claim_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period'\n        AND \"telehealth_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\",\n        \"period_indicator\"\n),\ntotal_members_cte AS (\n    SELECT\n        \"period_label\",\n        SUM(\"member_count\") AS total_member_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\"\n)\nSELECT\n    tc.\"period_label\",\n    tc.telehealth_claim_count * 1000.0 / NULLIF(tm.total_member_count, 0) AS telehealth_claims_per_1000\nFROM\n    telehealth_claims_cte tc\nJOIN\n    total_members_cte tm ON tc.\"period_label\" = tm.\"period_label\"\nORDER BY\n    CASE tc.\"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "telehealth",
+        "utilization",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q18",
+      "question": "What is the share of paid by BETOS category for the current period?",
+      "sql": "SELECT\n    \"betos_category\",\n    SUM(\"paid\") * 100.0 / SUM(SUM(\"paid\")) OVER () AS \"share_of_paid\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"betos_category\"\nORDER BY\n    SUM(\"paid\") DESC",
+      "tags": [
+        "BETOS",
+        "spend share",
+        "current period"
+      ]
+    },
+    {
+      "id": "HCT-Q19",
+      "question": "What are the top 10 CPT codes by paid for Behavioral Health?",
+      "sql": "SELECT\n    \"cpt_code\",\n    SUM(\"paid\") * 100.0 / SUM(SUM(\"paid\")) OVER () AS \"spend_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\n    AND \"period_indicator\" = 'P'\nGROUP BY\n    \"cpt_code\"\nORDER BY\n    SUM(\"paid\") DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BH",
+        "CPT",
+        "spend share",
+        "ranking"
+      ]
+    },
+    {
+      "id": "HCT-Q20",
+      "question": "Show me the overall financial summary — NPV%, APV%, edit rate, unit cost by period",
+      "sql": "SELECT\n    \"period_label\",\n    SUM(\"npv\") * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"npv_percent\",\n    SUM(\"adjustments\") * 100.0 / NULLIF(SUM(\"gpv\"), 0) AS \"apv_percent\",\n    SUM(\"edited_lines\") * 1000.0 / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS \"edit_rate\",\n    SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS \"unit_cost\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\nGROUP BY\n    \"period_label\",\n    \"period_indicator\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "financial",
+        "summary",
+        "rates",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q21",
+      "question": "What is the trend in Behavioral Health utilization (claims per 1000 members) across product type?",
+      "sql": "WITH bh_claims_cte AS (\n    SELECT\n        \"period_label\",\n        \"period_indicator\",\n        \"product_type\",\n        SUM(\"claim_count\") AS bh_claim_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period_lob_prod'\n        AND \"behavioral_health_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\",\n        \"period_indicator\",\n        \"product_type\"\n),\ntotal_members_cte AS (\n    SELECT\n        \"period_label\",\n        SUM(\"member_count\") AS total_member_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n    GROUP BY\n        \"period_label\"\n)\nSELECT\n    c.\"period_label\",\n    c.\"product_type\",\n    c.bh_claim_count * 1000.0 / NULLIF(m.total_member_count, 0) AS claims_per_1000_members\nFROM\n    bh_claims_cte c\nJOIN\n    total_members_cte m ON c.\"period_label\" = m.\"period_label\"\nORDER BY\n    CASE c.\"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END,\n    c.\"product_type\"",
+      "tags": [
+        "BH",
+        "utilization",
+        "product_type",
+        "trend"
+      ]
+    },
+    {
+      "id": "HCT-Q22",
+      "question": "Show Behavioral Health claims per 1000 members by BETOS category for the current period",
+      "sql": "WITH bh_claims_cte AS (\n    SELECT\n        \"betos_category\",\n        SUM(\"claim_count\") AS bh_claim_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period_lob_prod_state_betos'\n        AND \"behavioral_health_indicator_cm\" = '1'\n        AND \"period_indicator\" = 'P'\n    GROUP BY\n        \"betos_category\"\n),\ntotal_members_cte AS (\n    SELECT\n        SUM(\"member_count\") AS total_member_count\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n        AND \"period_indicator\" = 'P'\n)\nSELECT\n    bc.\"betos_category\",\n    bc.bh_claim_count * 1000.0 / NULLIF(tm.total_member_count, 0) AS claims_per_1000_members\nFROM\n    bh_claims_cte bc\nCROSS JOIN\n    total_members_cte tm\nORDER BY\n    claims_per_1000_members DESC",
+      "tags": [
+        "BH",
+        "utilization",
+        "BETOS",
+        "category",
+        "current period"
+      ],
+      "notes": "Claims from COUNT PART at betos LOD. Members from 'period' per MEMBER_LOD_MAPPING (no LOB/state in question → period)."
+    },
+    {
+      "id": "HCT-Q23",
+      "question": "Which BETOS categories and subcategories show the largest YoY change in spend share?",
+      "sql": "WITH spend_data AS (\n    SELECT\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\",\n        SUM(\"paid\") AS total_paid\n    FROM\n        PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE\n        \"level_of_detail\" IS NULL\n        AND \"period_indicator\" IN ('P', 'P_lag1')\n    GROUP BY\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\"\n),\nspend_share_calc AS (\n    SELECT\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\",\n        total_paid * 100.0 / NULLIF(SUM(total_paid) OVER (PARTITION BY \"period_indicator\"), 0) AS spend_share\n    FROM\n        spend_data\n),\nyoy_share_change AS (\n    SELECT\n        \"betos_category\",\n        \"betos_subcategory\",\n        \"period_indicator\",\n        spend_share,\n        LAG(spend_share, 1) OVER (\n            PARTITION BY \"betos_category\", \"betos_subcategory\"\n            ORDER BY CASE \"period_indicator\" WHEN 'P_lag1' THEN 1 WHEN 'P' THEN 2 END\n        ) AS previous_period_share\n    FROM\n        spend_share_calc\n)\nSELECT\n    \"betos_category\",\n    \"betos_subcategory\",\n    (spend_share - previous_period_share) AS yoy_spend_share_change\nFROM\n    yoy_share_change\nWHERE\n    \"period_indicator\" = 'P'\n    AND previous_period_share IS NOT NULL\nORDER BY\n    ABS(spend_share - previous_period_share) DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BETOS",
+        "spend share",
+        "YoY",
+        "category",
+        "subcategory"
+      ]
+    },
+    {
+      "id": "HCT-Q24",
+      "question": "Which BETOS subcategories show the largest YoY spend share change? Include utilization rate and unit cost.",
+      "sql": "WITH cte_spend AS (\n    SELECT\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\",\n        SUM(\"paid\") AS total_paid,\n        SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS unit_cost\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"period_indicator\" IN ('P', 'P_lag1')\n    GROUP BY \"period_indicator\", \"betos_category\", \"betos_subcategory\"\n),\ncte_spend_share AS (\n    SELECT\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\",\n        total_paid,\n        unit_cost,\n        total_paid * 100.0 / NULLIF(SUM(total_paid) OVER (PARTITION BY \"period_indicator\"), 0) AS spend_share\n    FROM cte_spend\n),\ncte_spend_yoy AS (\n    SELECT\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\",\n        spend_share,\n        unit_cost,\n        LAG(spend_share) OVER (\n            PARTITION BY \"betos_category\", \"betos_subcategory\"\n            ORDER BY CASE \"period_indicator\" WHEN 'P_lag1' THEN 1 WHEN 'P' THEN 2 END\n        ) AS prev_spend_share,\n        LAG(unit_cost) OVER (\n            PARTITION BY \"betos_category\", \"betos_subcategory\"\n            ORDER BY CASE \"period_indicator\" WHEN 'P_lag1' THEN 1 WHEN 'P' THEN 2 END\n        ) AS prev_unit_cost\n    FROM cte_spend_share\n),\ncte_claims AS (\n    SELECT\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\",\n        SUM(\"claim_count\") AS total_claims\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period_lob_prod_state_betos_subcat'\n        AND \"default_indicator_cm\" = '1'\n        AND \"period_indicator\" IN ('P', 'P_lag1')\n    GROUP BY \"period_indicator\", \"betos_category\", \"betos_subcategory\"\n),\ncte_members AS (\n    SELECT\n        \"period_indicator\",\n        SUM(\"member_count\") AS total_members\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n        AND \"period_indicator\" IN ('P', 'P_lag1')\n    GROUP BY \"period_indicator\"\n),\ncte_utilization AS (\n    SELECT\n        c.\"period_indicator\",\n        c.\"betos_category\",\n        c.\"betos_subcategory\",\n        c.total_claims * 1000.0 / NULLIF(m.total_members, 0) AS claims_per_1000\n    FROM cte_claims c\n    JOIN cte_members m ON c.\"period_indicator\" = m.\"period_indicator\"\n),\ncte_util_yoy AS (\n    SELECT\n        \"period_indicator\",\n        \"betos_category\",\n        \"betos_subcategory\",\n        claims_per_1000,\n        LAG(claims_per_1000) OVER (\n            PARTITION BY \"betos_category\", \"betos_subcategory\"\n            ORDER BY CASE \"period_indicator\" WHEN 'P_lag1' THEN 1 WHEN 'P' THEN 2 END\n        ) AS prev_claims_per_1000\n    FROM cte_utilization\n)\nSELECT\n    s.\"betos_category\",\n    s.\"betos_subcategory\",\n    s.spend_share AS current_spend_share,\n    (s.spend_share - s.prev_spend_share) AS spend_share_yoy_change,\n    s.unit_cost AS current_unit_cost,\n    (s.unit_cost - s.prev_unit_cost) AS unit_cost_yoy_change,\n    u.claims_per_1000 AS current_claims_per_1000,\n    (u.claims_per_1000 - u.prev_claims_per_1000) AS utilization_yoy_change\nFROM cte_spend_yoy s\nLEFT JOIN cte_util_yoy u\n    ON s.\"betos_category\" = u.\"betos_category\"\n    AND s.\"betos_subcategory\" = u.\"betos_subcategory\"\n    AND s.\"period_indicator\" = u.\"period_indicator\"\nWHERE s.\"period_indicator\" = 'P'\n    AND s.prev_spend_share IS NOT NULL\nORDER BY ABS(s.spend_share - s.prev_spend_share) DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BETOS",
+        "spend share",
+        "YoY",
+        "utilization",
+        "unit cost",
+        "combined",
+        "subcategory"
+      ],
+      "notes": "Demonstrates correct multi-metric pattern: (1) Spend share from SUM PART with window function + LAG for YoY. (2) Unit cost from SUM PART (paid/lines). (3) Utilization from COUNT PART — claims at period_lob_prod_state_betos_subcat, members at 'period' per MEMBER_LOD_MAPPING (no LOB/state in question). Members aggregated to period level since output is by betos."
+    },
+    {
+      "id": "HCT-Q25",
+      "question": "What is the utilization CAGR for top 10 CPT codes by spend for Behavioral Health within E/M?",
+      "sql": "WITH Top10CPTBySpend AS (\n    SELECT \"cpt_code\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"behavioral_health_indicator\" = 1\n        AND \"betos_category\" = 'E/M'\n        AND \"period_indicator\" = 'P'\n        AND \"line_of_business\" != 'Dual'\n        AND \"product_type\" != 'Inpatient'\n    GROUP BY \"cpt_code\"\n    ORDER BY SUM(\"paid\") DESC\n    FETCH FIRST 10 ROWS ONLY\n),\nClaims AS (\n    SELECT \"cpt_code\", \"period_indicator\",\n        SUM(\"claim_count\") AS \"total_claims\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period_lob_prod_state_betos_cpt'\n        AND \"behavioral_health_indicator_cm\" = '1'\n        AND \"betos_category\" = 'E/M'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n        AND \"cpt_code\" IN (SELECT \"cpt_code\" FROM Top10CPTBySpend)\n        AND \"line_of_business\" != 'Dual'\n        AND \"product_type\" != 'Inpatient'\n    GROUP BY \"cpt_code\", \"period_indicator\"\n),\nMembers AS (\n    SELECT \"period_indicator\",\n        SUM(\"member_count\") AS \"total_members\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n    GROUP BY \"period_indicator\"\n),\nUtilization AS (\n    SELECT\n        c.\"cpt_code\",\n        c.\"period_indicator\",\n        c.\"total_claims\" * 1000.0 / NULLIF(m.\"total_members\", 0) AS \"claims_per_1000\"\n    FROM Claims c\n    JOIN Members m ON c.\"period_indicator\" = m.\"period_indicator\"\n)\nSELECT\n    u_p.\"cpt_code\",\n    POWER(\n        u_p.\"claims_per_1000\" / NULLIF(u_lag.\"claims_per_1000\", 0),\n        1.0 / 3\n    ) - 1 AS \"utilization_cagr\"\nFROM Utilization u_p\nJOIN Utilization u_lag ON u_p.\"cpt_code\" = u_lag.\"cpt_code\"\nWHERE u_p.\"period_indicator\" = 'P'\n    AND u_lag.\"period_indicator\" = 'P_lag2'\nORDER BY \"utilization_cagr\" DESC\nFETCH FIRST 10 ROWS ONLY",
+      "tags": [
+        "BH",
+        "E/M",
+        "utilization",
+        "CAGR",
+        "CPT",
+        "top N"
+      ],
+      "notes": "Utilization CAGR pattern: (1) Top-N CTE from SUM PART. (2) Claims from COUNT PART at period_lob_prod_state_betos_cpt LOD. (3) Members from 'period' per MEMBER_LOD_MAPPING (no LOB/state in question). (4) Utilization CTE computes claims_per_1000. (5) CAGR via POWER(P/P_lag2, 1/3)-1. Excludes Inpatient product_type."
+    },
+    {
+      "id": "HCT-Q26",
+      "question": "How do utilization CAGR and unit cost CAGR compare across different LOBs for Behavioral Health within E/M?",
+      "sql": "WITH Claims AS (\n    SELECT \"line_of_business\", \"period_indicator\",\n        SUM(\"claim_count\") AS \"total_claims\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period_lob_prod_state_betos'\n        AND \"behavioral_health_indicator_cm\" = '1'\n        AND \"betos_category\" = 'E/M'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n        AND \"line_of_business\" != 'Dual'\n        AND \"product_type\" != 'Inpatient'\n    GROUP BY \"line_of_business\", \"period_indicator\"\n),\nMembers AS (\n    SELECT \"line_of_business\", \"period_indicator\",\n        SUM(\"member_count\") AS \"total_members\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period_lob'\n        AND \"default_indicator_cm\" = '1'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n        AND \"line_of_business\" != 'Dual'\n    GROUP BY \"line_of_business\", \"period_indicator\"\n),\nUtilization AS (\n    SELECT c.\"line_of_business\", c.\"period_indicator\",\n        c.\"total_claims\" * 1000.0 / NULLIF(m.\"total_members\", 0) AS \"claims_per_1000\"\n    FROM Claims c\n    JOIN Members m ON c.\"period_indicator\" = m.\"period_indicator\"\n        AND c.\"line_of_business\" = m.\"line_of_business\"\n),\nUnitCost AS (\n    SELECT \"line_of_business\", \"period_indicator\",\n        SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS \"unit_cost\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"behavioral_health_indicator\" = 1\n        AND \"betos_category\" = 'E/M'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n        AND \"line_of_business\" != 'Dual'\n        AND \"product_type\" != 'Inpatient'\n    GROUP BY \"line_of_business\", \"period_indicator\"\n)\nSELECT\n    u_p.\"line_of_business\",\n    POWER(u_p.\"claims_per_1000\" / NULLIF(u_lag.\"claims_per_1000\", 0), 1.0/3) - 1 AS \"utilization_cagr\",\n    POWER(uc_p.\"unit_cost\" / NULLIF(uc_lag.\"unit_cost\", 0), 1.0/3) - 1 AS \"unit_cost_cagr\"\nFROM Utilization u_p\nJOIN Utilization u_lag ON u_p.\"line_of_business\" = u_lag.\"line_of_business\"\nJOIN UnitCost uc_p ON u_p.\"line_of_business\" = uc_p.\"line_of_business\" AND uc_p.\"period_indicator\" = 'P'\nJOIN UnitCost uc_lag ON u_p.\"line_of_business\" = uc_lag.\"line_of_business\" AND uc_lag.\"period_indicator\" = 'P_lag2'\nWHERE u_p.\"period_indicator\" = 'P' AND u_lag.\"period_indicator\" = 'P_lag2'\nORDER BY u_p.\"line_of_business\"",
+      "tags": [
+        "BH",
+        "E/M",
+        "utilization",
+        "unit cost",
+        "CAGR",
+        "LOB"
+      ],
+      "notes": "Combined CAGR pattern: (1) Claims from COUNT PART at period_lob_prod_state_betos (E/M needs betos). (2) Members at 'period_lob' per MEMBER_LOD_MAPPING (user asks 'across LOBs'). (3) UnitCost from SUM PART (level_of_detail IS NULL). (4) CAGR exponent 1/3. JOIN on line_of_business + period_indicator."
+    },
+    {
+      "id": "HCT-Q27",
+      "question": "How is the duration of service trend for Behavioral Health over the last 3 years?",
+      "sql": "SELECT\n    \"period_label\",\n    CASE\n        WHEN \"cpt_code\" IN ('90832', '90833') THEN '30 Minutes'\n        WHEN \"cpt_code\" IN ('90834', '90836') THEN '45 Minutes'\n        WHEN \"cpt_code\" IN ('90837', '90838') THEN '60 Minutes'\n    END AS \"duration_of_service\",\n    SUM(\"paid\") * 100.0 / NULLIF(SUM(SUM(\"paid\")) OVER (PARTITION BY \"period_indicator\"), 0) AS \"spend_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"behavioral_health_indicator\" = 1\n    AND \"cpt_code\" IN ('90832', '90833', '90834', '90836', '90837', '90838')\n    AND \"product_type\" != 'Inpatient'\n    AND \"line_of_business\" != 'Dual'\nGROUP BY\n    \"period_label\",\n    \"period_indicator\",\n    CASE\n        WHEN \"cpt_code\" IN ('90832', '90833') THEN '30 Minutes'\n        WHEN \"cpt_code\" IN ('90834', '90836') THEN '45 Minutes'\n        WHEN \"cpt_code\" IN ('90837', '90838') THEN '60 Minutes'\n    END\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END,\n    \"duration_of_service\"",
+      "tags": [
+        "BH",
+        "duration of service",
+        "CPT",
+        "trend",
+        "psychotherapy"
+      ],
+      "notes": "Duration of service = CPT-based time mapping, NOT the 'los' column. Uses SUM PART (level_of_detail IS NULL) since this is a spend share analysis. CASE WHEN groups CPT codes into 30/45/60 minute buckets."
+    },
+    {
+      "id": "HCT-Q28",
+      "question": "What are the Payment Integrity trends for Elevance Health?",
+      "sql": "WITH financial AS (\n    SELECT\n        \"period_label\",\n        \"period_indicator\",\n        SUM(\"gpv\") * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"gpv_percent\",\n        SUM(\"npv\") * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"npv_percent\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"customer\" = 'Elevance Health'\n        AND \"product_type\" != 'Inpatient'\n        AND \"line_of_business\" != 'Dual'\n    GROUP BY \"period_label\", \"period_indicator\"\n),\nclaims AS (\n    SELECT \"period_indicator\",\n        SUM(\"claim_count\") AS \"total_claims\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n        AND \"customer\" = 'Elevance Health'\n    GROUP BY \"period_indicator\"\n),\nmembers AS (\n    SELECT \"period_indicator\",\n        SUM(\"member_count\") AS \"total_members\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period'\n        AND \"default_indicator_cm\" = '1'\n        AND \"customer\" = 'Elevance Health'\n    GROUP BY \"period_indicator\"\n)\nSELECT\n    f.\"period_label\",\n    f.\"gpv_percent\",\n    f.\"npv_percent\",\n    c.\"total_claims\" * 1000.0 / NULLIF(m.\"total_members\", 0) AS \"claims_per_1000\"\nFROM financial f\nJOIN claims c ON f.\"period_indicator\" = c.\"period_indicator\"\nJOIN members m ON f.\"period_indicator\" = m.\"period_indicator\"\nORDER BY\n    CASE f.\"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END",
+      "tags": [
+        "PI",
+        "GPV%",
+        "NPV%",
+        "utilization",
+        "customer",
+        "trend",
+        "composite"
+      ],
+      "notes": "Payment Integrity trends = GPV% + NPV% + utilization (claims per 1000). Financial metrics from SUM PART. Utilization from COUNT PART at 'period' LOD (no LOB/state in question). Member LOD = 'period' per MEMBER_LOD_MAPPING."
+    },
+    {
+      "id": "HCT-Q29",
+      "question": "How did unit cost change for Behavioral Health by line of business?",
+      "sql": "WITH UnitCost AS (\n    SELECT\n        \"line_of_business\",\n        \"period_indicator\",\n        SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS \"unit_cost\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"behavioral_health_indicator\" = 1\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n        AND \"line_of_business\" != 'Dual'\n        AND \"product_type\" != 'Inpatient'\n    GROUP BY \"line_of_business\", \"period_indicator\"\n)\nSELECT\n    uc_p.\"line_of_business\",\n    uc_p.\"unit_cost\" AS \"current_unit_cost\",\n    uc_lag.\"unit_cost\" AS \"baseline_unit_cost\",\n    POWER(uc_p.\"unit_cost\" / NULLIF(uc_lag.\"unit_cost\", 0), 1.0 / 3) - 1 AS \"unit_cost_cagr\"\nFROM UnitCost uc_p\nJOIN UnitCost uc_lag\n    ON uc_p.\"line_of_business\" = uc_lag.\"line_of_business\"\nWHERE uc_p.\"period_indicator\" = 'P'\n    AND uc_lag.\"period_indicator\" = 'P_lag2'\nORDER BY \"unit_cost_cagr\" DESC",
+      "tags": [
+        "BH",
+        "unit cost",
+        "CAGR",
+        "LOB",
+        "comparison"
+      ],
+      "notes": "Unit cost CAGR pattern: (1) CTE computes SUM(paid)/SUM(non_bypassed_lines) per LOB for P and P_lag2 from the SUM PART (level_of_detail IS NULL). (2) Self-join on LOB to get both periods side-by-side. (3) CAGR = POWER(P/P_lag2, 1/3)-1. 'Change' triggers CAGR per UNIT_COST_VS_CAGR rule. Excludes Dual and Inpatient per standard rules."
+    },
+    {
+      "id": "HCT-Q30",
+      "question": "What is driving the increase in spend for Medicaid?",
+      "sql": "WITH TopICD AS (\n    SELECT \"icd1_grp_desc\"\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"behavioral_health_indicator\" = 1\n        AND \"betos_category\" = 'E/M'\n        AND \"line_of_business\" = 'Medicaid'\n        AND \"period_indicator\" = 'P'\n        AND \"product_type\" != 'Inpatient'\n    GROUP BY \"icd1_grp_desc\"\n    ORDER BY SUM(\"paid\") DESC\n    FETCH FIRST 5 ROWS ONLY\n),\nSpendShare AS (\n    SELECT \"icd1_grp_desc\",\n        SUM(\"paid\") * 100.0 / NULLIF(SUM(SUM(\"paid\")) OVER (), 0) AS spend_share\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"behavioral_health_indicator\" = 1\n        AND \"betos_category\" = 'E/M'\n        AND \"line_of_business\" = 'Medicaid'\n        AND \"period_indicator\" = 'P'\n        AND \"product_type\" != 'Inpatient'\n        AND \"icd1_grp_desc\" IN (SELECT \"icd1_grp_desc\" FROM TopICD)\n    GROUP BY \"icd1_grp_desc\"\n),\nClaims AS (\n    SELECT \"icd1_grp_desc\", \"period_indicator\",\n        SUM(\"claim_count\") AS total_claims\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period_lob_prod_state_betos_icd'\n        AND \"behavioral_health_indicator_cm\" = '1'\n        AND \"betos_category\" = 'E/M'\n        AND \"line_of_business\" = 'Medicaid'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n        AND \"product_type\" != 'Inpatient'\n        AND \"icd1_grp_desc\" IN (SELECT \"icd1_grp_desc\" FROM TopICD)\n    GROUP BY \"icd1_grp_desc\", \"period_indicator\"\n),\nMembers AS (\n    SELECT \"period_indicator\",\n        SUM(\"member_count\") AS total_members\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" = 'period_lob'\n        AND \"default_indicator_cm\" = '1'\n        AND \"line_of_business\" = 'Medicaid'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n    GROUP BY \"period_indicator\"\n),\nUtilization AS (\n    SELECT c.\"icd1_grp_desc\", c.\"period_indicator\",\n        c.total_claims * 1000.0 / NULLIF(m.total_members, 0) AS claims_per_1000\n    FROM Claims c\n    JOIN Members m ON c.\"period_indicator\" = m.\"period_indicator\"\n),\nUnitCost AS (\n    SELECT \"icd1_grp_desc\", \"period_indicator\",\n        SUM(\"paid\") / NULLIF(SUM(\"non_bypassed_lines\"), 0) AS unit_cost\n    FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI\n    WHERE \"level_of_detail\" IS NULL\n        AND \"behavioral_health_indicator\" = 1\n        AND \"betos_category\" = 'E/M'\n        AND \"line_of_business\" = 'Medicaid'\n        AND \"period_indicator\" IN ('P', 'P_lag2')\n        AND \"product_type\" != 'Inpatient'\n        AND \"icd1_grp_desc\" IN (SELECT \"icd1_grp_desc\" FROM TopICD)\n    GROUP BY \"icd1_grp_desc\", \"period_indicator\"\n)\nSELECT\n    ss.\"icd1_grp_desc\",\n    ss.spend_share,\n    POWER(u_p.claims_per_1000 / NULLIF(u_lag.claims_per_1000, 0), 1.0/3) - 1 AS utilization_cagr,\n    POWER(uc_p.unit_cost / NULLIF(uc_lag.unit_cost, 0), 1.0/3) - 1 AS unit_cost_cagr\nFROM SpendShare ss\nLEFT JOIN Utilization u_p ON ss.\"icd1_grp_desc\" = u_p.\"icd1_grp_desc\" AND u_p.\"period_indicator\" = 'P'\nLEFT JOIN Utilization u_lag ON ss.\"icd1_grp_desc\" = u_lag.\"icd1_grp_desc\" AND u_lag.\"period_indicator\" = 'P_lag2'\nLEFT JOIN UnitCost uc_p ON ss.\"icd1_grp_desc\" = uc_p.\"icd1_grp_desc\" AND uc_p.\"period_indicator\" = 'P'\nLEFT JOIN UnitCost uc_lag ON ss.\"icd1_grp_desc\" = uc_lag.\"icd1_grp_desc\" AND uc_lag.\"period_indicator\" = 'P_lag2'\nORDER BY ss.spend_share DESC",
+      "tags": [
+        "BH",
+        "drivers",
+        "ICD",
+        "spend share",
+        "utilization CAGR",
+        "unit cost CAGR",
+        "Medicaid",
+        "top N"
+      ],
+      "notes": "Driver analysis pattern for 'what is driving spend': (1) Top 5 ICD groups by spend share (current P, BH+E/M scope). (2) Utilization CAGR per ICD (claims from COUNT PART at period_lob_prod_state_icd LOD, members from period_lob). (3) Unit cost CAGR per ICD (from SUM PART). All use P vs P_lag2 with POWER(x, 1/3)-1. Applies BH_ALWAYS_EM rule. For other LOBs, change line_of_business filter."
+    },
+    {
+      "id": "HCT-Q31",
+      "question": "How does the spend trend vary by line of business for Behavioral Health?",
+      "sql": "SELECT\n    \"period_label\",\n    \"line_of_business\",\n    SUM(CASE WHEN \"behavioral_health_indicator\" = 1 THEN \"paid\" ELSE 0 END) * 100.0 / NULLIF(SUM(\"paid\"), 0) AS \"bh_paid_share\"\nFROM\n    PROD_DATASETS.HEALTHCARE_PHASE2_PPI\nWHERE\n    \"level_of_detail\" IS NULL\n    AND \"betos_category\" = 'E/M'\n    AND \"line_of_business\" != 'Dual'\n    AND \"product_type\" != 'Inpatient'\nGROUP BY\n    \"period_label\",\n    \"line_of_business\",\n    \"period_indicator\"\nORDER BY\n    CASE \"period_indicator\" WHEN 'P_lag2' THEN 1 WHEN 'P_lag1' THEN 2 WHEN 'P' THEN 3 END,\n    \"line_of_business\"",
+      "tags": [
+        "BH",
+        "spend share",
+        "LOB",
+        "trend",
+        "E/M"
+      ],
+      "notes": "BH spend share BY LOB trend: use CASE WHEN behavioral_health_indicator=1 for numerator, total paid (all indicators) for denominator. Do NOT filter WHERE behavioral_health_indicator=1 — that removes the denominator context. Do NOT use window functions (PARTITION BY) for the share — use the inline CASE WHEN / SUM pattern. This shows how BH-heavy each LOB is over time."
+    }
+  ]
+}

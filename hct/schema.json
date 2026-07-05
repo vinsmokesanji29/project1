@@ -1,0 +1,160 @@
+{
+  "database": "Oracle Autonomous Database (ADB Lakehouse)",
+  "sql_dialect": "Oracle SQL",
+  "dialect_notes": [
+    "Use FETCH FIRST N ROWS ONLY for row limits. NEVER use LIMIT.",
+    "NEVER use AS for table aliases. Write 'FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI h' not 'FROM PROD_DATASETS.HEALTHCARE_PHASE2_PPI AS h'. Oracle does not allow AS before table aliases.",
+    "ALL column names MUST be double-quoted because they are stored in lowercase (e.g. \"paid\", \"npv\", \"behavioral_health_indicator\", \"line_of_business\"). Unquoted identifiers are uppercased by Oracle and will fail (ORA-00904).",
+    "Always qualify the table with schema: PROD_DATASETS.HEALTHCARE_PHASE2_PPI.",
+    "Use NVL or COALESCE for NULL-safe operations.",
+    "Use Oracle standard functions: NVL, SUBSTR, INSTR, ROUND, TRUNC.",
+    "NEVER nest aggregates (e.g. MAX(SUM(x))). Use a subquery or CTE for the inner aggregate first.",
+    "Do NOT use DuckDB / Postgres specific syntax (LIMIT, ILIKE, ::type casts, strftime, etc.).",
+    "Healthcare claims and editing dataset used for Behavioral Health financial, utilization, and quality analysis.",
+    "Behavioral Health financial metrics use \"behavioral_health_indicator\" = 1.",
+    "Behavioral Health claim/member metrics use \"behavioral_health_indicator_cm\" = '1'.",
+    "E/M is defined using \"betos_category\" = 'E/M'.",
+    "Unit cost is defined as Paid per Line: SUM(\"paid\") / SUM(\"non_bypassed_lines\").",
+    "Edit rate is calculated using \"edited_lines\" and \"non_bypassed_lines\".",
+    "NPV% = SUM(\"npv\") / SUM(\"paid\").",
+    "APV% = SUM(\"adjustments\") / SUM(\"gpv\").",
+    "Claims per 1000 members is a context-sensitive metric and must NOT use a naive SUM(\"claim_count\") / SUM(\"member_count\") across the raw visual grain.",
+    "For Claims per 1000 members, the numerator must use \"claim_count\" at the correct visual \"level_of_detail\" with \"behavioral_health_indicator_cm\" = '1'.",
+    "For Claims per 1000 members, the denominator must use \"member_count\" at \"period_label\" grain when \"line_of_business\" is not present in the visual or filters.",
+    "For Claims per 1000 members, the denominator must use \"member_count\" at 'period_lob' grain when \"line_of_business\" is present in the visual or filters.",
+    "Never mix period and period_lob member_count logic in the same calculation; wrong level_of_detail inflates or deflates utilization.",
+    "\"period_label\" is always the base time grain for claim/member calculations.",
+    "Typical \"level_of_detail\" values for \"claim_count\" are 'period', 'period_lob', 'period_lob_prod_pos', 'period_lob_prod_betos', 'period_lob_prod_spec', and 'period_lob_prod_cpt'. Match the visual grain."
+  ],
+  "tables": {
+    "PROD_DATASETS.HEALTHCARE_PHASE2_PPI": {
+      "description": "Healthcare claims dataset with financial, utilization, and editing metrics across dimensions such as BETOS, CPT, POS, line of business, region, and time. Some metrics require level-of-detail-aware aggregation rather than direct aggregation at the full visual grain.",
+      "columns": {
+        "paid": {
+          "type": "decimal",
+          "description": "Total paid amount for claim lines."
+        },
+        "npv": {
+          "type": "decimal",
+          "description": "Net payment variance (savings)."
+        },
+        "adjustments": {
+          "type": "decimal",
+          "description": "Adjustment amount used for APV%."
+        },
+        "gpv": {
+          "type": "decimal",
+          "description": "Gross payment variance used for APV%."
+        },
+        "claim_count": {
+          "type": "int",
+          "description": "Claim count snapshot that must be aggregated at the correct level_of_detail matching the visual grain."
+        },
+        "member_count": {
+          "type": "int",
+          "description": "Member denominator snapshot. For utilization metrics, aggregate only at period_label or period_lob depending on whether line_of_business is in scope."
+        },
+        "non_bypassed_lines": {
+          "type": "int",
+          "description": "Eligible claim lines after bypass exclusions."
+        },
+        "edited_lines": {
+          "type": "int",
+          "description": "Claim lines with edits applied."
+        },
+        "behavioral_health_indicator": {
+          "type": "int",
+          "description": "1 indicates Behavioral Health for financial metrics."
+        },
+        "behavioral_health_indicator_cm": {
+          "type": "string",
+          "description": "'1' indicates Behavioral Health for claim/member utilization metrics."
+        },
+        "default_indicator_cm": {
+          "type": "string",
+          "description": "Default member-count eligibility flag used when aggregating the member denominator for claims-per-1000 calculations."
+        },
+        "level_of_detail": {
+          "type": "string",
+          "description": "Pre-aggregated grain label used to select the correct claim_count or member_count snapshot, such as period, period_lob, period_lob_prod_pos, period_lob_prod_betos, period_lob_prod_spec, or period_lob_prod_cpt."
+        },
+        "betos_category": {
+          "type": "string",
+          "description": "BETOS classification, for example E/M."
+        },
+        "betos_subcategory": {
+          "type": "string",
+          "description": "CPT code group within the BETOS classification."
+        },
+        "betos_family": {
+          "type": "string",
+          "description": "Higher-level BETOS family classification."
+        },
+        "cpt_code": {
+          "type": "string",
+          "description": "Procedure CPT code."
+        },
+        "pos_desc": {
+          "type": "string",
+          "description": "Place of service description."
+        },
+        "spec_desc": {
+          "type": "string",
+          "description": "Specialty description."
+        },
+        "line_of_business": {
+          "type": "string",
+          "description": "Line of business. Presence of this dimension changes the correct member_count denominator grain from period to period_lob."
+        },
+        "payer_short": {
+          "type": "string",
+          "description": "Payer identifier within a customer. Each customer has multiple payer_shorts. Used in medical-policy edit-rate denominators to scope non-bypassed lines to payers where a policy has GPV > 0."
+        },
+        "region": {
+          "type": "string",
+          "description": "Geographic region."
+        },
+        "period_label": {
+          "type": "string",
+          "description": "Base reporting period label for the rolling 3-year view. This is always the base time grain for claim/member calculations."
+        },
+        "icd1_grp_desc": {
+          "type": "string",
+          "description": "ICD diagnostic group."
+        },
+        "los": {
+          "type": "string",
+          "description": "Level of service (nullable). Used for analysing duration/severity of services."
+        },
+        "telehealth_indicator": {
+          "type": "string",
+          "description": "Telehealth classification for the claim line (e.g. 'Telehealth'). Used with behavioral_health_indicator for financial telehealth metrics."
+        },
+        "telehealth_indicator_cm": {
+          "type": "string",
+          "description": "Telehealth classification flag for claim/member utilisation metrics. Follows the same _cm pattern as behavioral_health_indicator_cm."
+        },
+        "medical_policy": {
+          "type": "string",
+          "description": "Medical policy name that triggered an edit on the claim line (nullable). Used to identify which policies drive the most edits."
+        },
+        "product_type": {
+          "type": "string",
+          "description": "Product type classification (e.g. 'Outpatient', 'Professional'). Used for spend share analysis by product."
+        }
+      }
+    }
+  },
+  "joins": [],
+  "derived_metrics": {
+    "TOTAL_PAID": "SUM(\"paid\")",
+    "TOTAL_NPV": "SUM(\"npv\")",
+    "PAID_PER_LINE": "SUM(\"paid\") / SUM(\"non_bypassed_lines\")",
+    "CLAIMS_PER_1000_MEMBERS": "(SUM(\"claim_count\") at the correct visual \"level_of_detail\" where \"behavioral_health_indicator_cm\" = '1' / SUM(\"member_count\") at \"level_of_detail\" = 'period_lob' when \"line_of_business\" is present, otherwise \"level_of_detail\" = 'period', with \"default_indicator_cm\" = '1') * 1000",
+    "NPV_PERCENT": "SUM(\"npv\") / SUM(\"paid\")",
+    "APV_PERCENT": "SUM(\"adjustments\") / SUM(\"gpv\")",
+    "EDITS_PER_1000": "SUM(\"edited_lines\") * 1000.0 / SUM(\"non_bypassed_lines\")",
+    "PERCENT_SHARE_OF_PAID": "SUM(\"paid\") / SUM(SUM(\"paid\")) OVER ()",
+    "PERCENT_SHARE_OF_NON_BYPASSED_LINES": "SUM(\"non_bypassed_lines\") / SUM(SUM(\"non_bypassed_lines\")) OVER ()"
+  }
+}
